@@ -21,11 +21,14 @@ pub fn list_posts(posts_dir: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
-    fn it_works() {
-        pretty_env_logger::init();
+    fn success() {
+        let _ = pretty_env_logger::try_init();
         list_posts("./example/posts");
+    }
+    #[test]
+    fn not_exists() {
+        let _ = pretty_env_logger::try_init();
         list_posts("./this file does not exists");
     }
 }
