@@ -1,12 +1,13 @@
-use std::{fs::File, io::Read};
 use serde::{Deserialize, Serialize};
+use std::{fs::File, io::Read};
 
 #[derive(Deserialize, Serialize, PartialEq, Debug)]
 pub struct PostMetaData {
-    pub title: String
+    pub title: String,
 }
 
-pub fn list_posts(posts_dir: &str) {
+pub fn list_posts(posts_dir: &str) -> Vec<PostMetaData> {
+    let mut metadata: Vec<PostMetaData> = Vec::new();
     match std::fs::read_dir(posts_dir) {
         Err(e) => {
             log::warn!("{:?}", e);
@@ -20,12 +21,15 @@ pub fn list_posts(posts_dir: &str) {
                 log::trace!("{:?}", cont);
                 let n = file.read_to_string(&mut cont).unwrap();
                 log::trace!("{:?}", n);
-                let (front_matter, content) = serde_frontmatter::deserialize::<PostMetaData>(&cont).unwrap();
+                let (front_matter, content) =
+                    serde_frontmatter::deserialize::<PostMetaData>(&cont).unwrap();
                 log::trace!("{:?}", front_matter);
                 log::trace!("{:?}", content);
+                metadata.push(front_matter);
             }
         }
-    }
+    };
+    metadata
 }
 
 #[cfg(test)]
@@ -34,11 +38,14 @@ mod tests {
     #[test]
     fn success() {
         let _ = pretty_env_logger::try_init();
-        list_posts("./example/posts");
+        let metadata = list_posts("./example/posts");
+        assert!(metadata[0].title.eq("sample 1"));
+        assert!(metadata[1].title.eq("sample 2"));
     }
     #[test]
     fn not_exists() {
         let _ = pretty_env_logger::try_init();
-        list_posts("./this file does not exists");
+        let metadata = list_posts("./this file does not exists");
+        assert!(metadata.is_empty());
     }
 }
