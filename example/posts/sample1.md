@@ -1,6 +1,6 @@
---
+---
 title: sample 1
---
+---
 
 # sample1 h1
 
