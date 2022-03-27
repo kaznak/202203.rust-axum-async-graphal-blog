@@ -1,5 +1,9 @@
 use serde::{Deserialize, Serialize};
-use std::{fs::File, io::Read, path::Path};
+use std::{
+    fs::File,
+    io::Read,
+    path::{Path, PathBuf},
+};
 
 /// Post の front matter のデータ
 #[derive(Deserialize, Serialize, PartialEq, Debug)]
@@ -31,10 +35,16 @@ fn read_post_path(path: &Path) -> Option<PostData> {
     Some(postdata)
 }
 
-/// Post を slug で指定して読み出す。
-pub fn read_post_slug(posts_dir: &str, slug: &str) -> Option<PostData> {
+/// slug から path を作成する。
+fn slug_to_path(posts_dir: &str, slug: &str) -> PathBuf {
     let path = Path::new(posts_dir).join(slug).with_extension("md");
     log::trace!("{:?}", path);
+    path
+}
+
+/// Post を slug で指定して読み出す。
+pub fn read_post_slug(posts_dir: &str, slug: &str) -> Option<PostData> {
+    let path = slug_to_path(posts_dir, slug);
     read_post_path(&path)
 }
 
@@ -56,6 +66,24 @@ pub fn list_posts(posts_dir: &str) -> Vec<PostData> {
     };
     log::trace!("{:?}", post_vec);
     post_vec
+}
+
+/// あたらしい Post を書き込む。
+pub fn creates_post(posts_dir: &str, postdata: &PostData) -> bool {
+    // make data
+    let PostData {
+        title,
+        slug,
+        content,
+    } = postdata;
+    let front_matter = PostFrontMatter {
+        title: title.clone(),
+    };
+    let markdown = serde_frontmatter::serialize(front_matter, content).unwrap();
+    let path = slug_to_path(posts_dir, slug);
+
+    // write
+    todo!()
 }
 
 #[cfg(test)]
