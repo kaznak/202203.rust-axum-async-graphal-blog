@@ -1,24 +1,68 @@
-use async_graphql::{Context, EmptySubscription, Object, Schema, SimpleObject, Upload, ID};
+use crate::backend::post::*;
+use async_graphql::{Context, EmptySubscription, Object, Schema, SimpleObject, ID};
 use futures::lock::Mutex;
 use slab::Slab;
 
 pub type GraphQLSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
 
 #[derive(Clone, SimpleObject)]
-pub struct FileInfo {
-    id: ID,
-    url: String,
+pub struct Post {
+    slug: ID,
+    title: String,
+    content: String,
 }
 
-pub type Storage = Mutex<Slab<FileInfo>>;
+impl Into<PostData> for Post {
+    fn into(self) -> PostData {
+        let Post {
+            slug,
+            title,
+            content,
+        } = self;
+        PostData {
+            title,
+            slug: slug.to_string(),
+            content,
+        }
+    }
+}
+
+impl From<PostData> for Post {
+    fn from(postdata: PostData) -> Self {
+        let PostData {
+            title,
+            slug,
+            content,
+        } = postdata;
+        Post {
+            slug: ID::from(slug),
+            title,
+            content,
+        }
+    }
+}
+
+pub type Storage = Mutex<Slab<Post>>;
 
 pub struct QueryRoot;
 
 #[Object]
 impl QueryRoot {
-    async fn uploads(&self, ctx: &Context<'_>) -> Vec<FileInfo> {
-        let storage = ctx.data_unchecked::<Storage>().lock().await;
-        storage.iter().map(|(_, file)| file).cloned().collect()
+    async fn post<'ctx>(&self, ctx: &Context<'ctx>, slug: String) -> Result<Post, String> {
+        let dummy_post = Post {
+            slug: ID::from(slug),
+            title: String::from("dummy"),
+            content: String::from("dummy"),
+        };
+        Ok(dummy_post)
+    }
+    async fn list<'ctx>(&self, ctx: &Context<'ctx>) -> Result<Vec<Post>, String> {
+        let dummy_post = Post {
+            slug: ID::from("dummy"),
+            title: String::from("dummy"),
+            content: String::from("dummy"),
+        };
+        Ok(vec![dummy_post])
     }
 }
 
@@ -26,32 +70,35 @@ pub struct MutationRoot;
 
 #[Object]
 impl MutationRoot {
-    async fn single_upload(&self, ctx: &Context<'_>, file: Upload) -> FileInfo {
-        let mut storage = ctx.data_unchecked::<Storage>().lock().await;
-        println!("files count: {}", storage.len());
-        let entry = storage.vacant_entry();
-        let upload = file.value(ctx).unwrap();
-        let info = FileInfo {
-            id: entry.key().into(),
-            url: upload.filename,
+    async fn create<'ctx>(
+        &self,
+        ctx: &Context<'ctx>,
+        slug: String,
+        title: String,
+        content: String,
+    ) -> Result<Post, String> {
+        let dummy_post = Post {
+            slug: ID::from(slug),
+            title,
+            content,
         };
-        entry.insert(info.clone());
-        info
+        Ok(dummy_post)
     }
-
-    async fn multiple_upload(&self, ctx: &Context<'_>, files: Vec<Upload>) -> Vec<FileInfo> {
-        let mut infos = Vec::new();
-        let mut storage = ctx.data_unchecked::<Storage>().lock().await;
-        for file in files {
-            let entry = storage.vacant_entry();
-            let upload = file.value(ctx).unwrap();
-            let info = FileInfo {
-                id: entry.key().into(),
-                url: upload.filename.clone(),
-            };
-            entry.insert(info.clone());
-            infos.push(info)
-        }
-        infos
+    async fn update<'ctx>(
+        &self,
+        ctx: &Context<'ctx>,
+        slug: String,
+        title: String,
+        content: String,
+    ) -> Result<Post, String> {
+        let dummy_post = Post {
+            slug: ID::from(slug),
+            title,
+            content,
+        };
+        Ok(dummy_post)
+    }
+    async fn delete<'ctx>(&self, ctx: &Context<'ctx>, slug: String) -> Result<ID, String> {
+        Ok(ID::from(slug))
     }
 }
