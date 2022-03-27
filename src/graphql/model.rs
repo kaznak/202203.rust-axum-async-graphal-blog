@@ -47,12 +47,11 @@ pub struct QueryRoot;
 #[Object]
 impl QueryRoot {
     async fn post<'ctx>(&self, ctx: &Context<'ctx>, slug: String) -> Result<Post, String> {
-        let dummy_post = Post {
-            slug: ID::from(slug),
-            title: String::from("dummy"),
-            content: String::from("dummy"),
-        };
-        Ok(dummy_post)
+        let backend = ctx.data::<Storage>().unwrap();
+        match backend.read_post(&slug) {
+            Ok(p) => Ok(Post::from(p)),
+            Err(_) => Err("error!".to_string()),
+        }
     }
     async fn list<'ctx>(&self, ctx: &Context<'ctx>) -> Result<Vec<Post>, String> {
         let dummy_post = Post {
