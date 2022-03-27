@@ -1,7 +1,5 @@
-use crate::backend::post::*;
+use crate::backend::{file::FileBackend, post::*};
 use async_graphql::{Context, EmptySubscription, Object, Schema, SimpleObject, ID};
-use futures::lock::Mutex;
-use slab::Slab;
 
 pub type GraphQLSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
 
@@ -42,7 +40,7 @@ impl From<PostData> for Post {
     }
 }
 
-pub type Storage = Mutex<Slab<Post>>;
+pub type Storage = FileBackend;
 
 pub struct QueryRoot;
 
