@@ -154,7 +154,7 @@ impl Backend for FileBackend {
 mod tests {
     use super::*;
     #[test]
-    fn create_post_success() {
+    fn create_post_delete_post_success() {
         let _ = pretty_env_logger::try_init();
         let posts_dir = "./example/posts";
         let filebackend = FileBackend::new(posts_dir);
@@ -184,9 +184,9 @@ mod tests {
         log::trace!("readdata: {:?}", readdata);
         assert!(readdata.eq(&createdata));
 
-        // finalize
-        let path = filebackend.slug_to_path(slug);
-        let _ = std::fs::remove_file(path);
+        // delete
+        let delresult = filebackend.delete_post(&createdata);
+        assert!(delresult.is_ok());
     }
     #[test]
     fn read_post_success() {
