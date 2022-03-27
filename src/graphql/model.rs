@@ -40,6 +40,21 @@ impl From<PostData> for Post {
     }
 }
 
+impl From<&PostData> for Post {
+    fn from(postdata: &PostData) -> Self {
+        let PostData {
+            title,
+            slug,
+            content,
+        } = postdata;
+        Post {
+            slug: ID::from(slug),
+            title: title.clone(),
+            content: content.clone(),
+        }
+    }
+}
+
 pub type Storage = FileBackend;
 
 pub struct QueryRoot;
@@ -54,12 +69,11 @@ impl QueryRoot {
         }
     }
     async fn list<'ctx>(&self, ctx: &Context<'ctx>) -> Result<Vec<Post>, String> {
-        let dummy_post = Post {
-            slug: ID::from("dummy"),
-            title: String::from("dummy"),
-            content: String::from("dummy"),
-        };
-        Ok(vec![dummy_post])
+        let backend = ctx.data::<Storage>().unwrap();
+        match backend.list_posts() {
+            Ok(l) => Ok(l.iter().map(|pd| Post::from(pd)).collect()),
+            Err(_) => Err("error!".to_string()),
+        }
     }
 }
 
@@ -70,32 +84,45 @@ impl MutationRoot {
     async fn create<'ctx>(
         &self,
         ctx: &Context<'ctx>,
-        slug: String,
+        slug: ID,
         title: String,
         content: String,
     ) -> Result<Post, String> {
-        let dummy_post = Post {
-            slug: ID::from(slug),
+        let backend = ctx.data::<Storage>().unwrap();
+        let postdata = PostData {
+            slug: String::from(slug),
             title,
             content,
         };
-        Ok(dummy_post)
+        match backend.create_post(&postdata) {
+            Ok(p) => Ok(Post::from(p)),
+            Err(_) => Err("error!".to_string()),
+        }
     }
     async fn update<'ctx>(
         &self,
         ctx: &Context<'ctx>,
-        slug: String,
+        slug: ID,
         title: String,
         content: String,
     ) -> Result<Post, String> {
-        let dummy_post = Post {
-            slug: ID::from(slug),
+        let backend = ctx.data::<Storage>().unwrap();
+        let postdata = PostData {
+            slug: String::from(slug),
             title,
             content,
         };
-        Ok(dummy_post)
+        match backend.create_post(&postdata) {
+            Ok(p) => Ok(Post::from(p)),
+            Err(_) => Err("error!".to_string()),
+        }
     }
-    async fn delete<'ctx>(&self, ctx: &Context<'ctx>, slug: String) -> Result<ID, String> {
-        Ok(ID::from(slug))
+    async fn delete<'ctx>(&self, ctx: &Context<'ctx>, slug: ID) -> Result<ID, String> {
+        let backend = ctx.data::<Storage>().unwrap();
+        let slug_str = String::from(slug.clone());
+        match backend.delete_post(&slug_str) {
+            Ok(_) => Ok(slug),
+            Err(_) => Err("error!".to_string()),
+        }
     }
 }

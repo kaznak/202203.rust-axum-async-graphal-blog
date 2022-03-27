@@ -146,8 +146,7 @@ impl Backend for FileBackend {
         }
     }
     /// Delete
-    fn delete_post(&self, postdata: &PostData) -> Result<(), ()> {
-        let slug = &postdata.slug;
+    fn delete_post(&self, slug: &str) -> Result<(), ()> {
         let path = self.slug_to_path(&slug);
         match std::fs::remove_file(path) {
             Ok(()) => Ok(()),
@@ -193,7 +192,7 @@ mod tests {
         assert!(readdata.eq(&createdata));
 
         // delete
-        let delresult = filebackend.delete_post(&createdata);
+        let delresult = filebackend.delete_post(&createdata.slug);
         assert!(delresult.is_ok());
     }
     #[test]
