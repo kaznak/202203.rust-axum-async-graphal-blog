@@ -18,12 +18,12 @@ pub struct FileBackend {
 }
 
 /// Post を path で指定して読み出す。
-fn read_post_path(path: &Path) -> Option<PostData> {
+fn read_post_path(path: &Path) -> Result<PostData, ()> {
     let slug = path.file_stem().unwrap().to_str().unwrap().to_string();
     let file_opt = File::open(path);
     if let Err(e) = file_opt {
         log::warn!("{:?}", e);
-        return None;
+        return Err(());
     }
 
     let mut file = file_opt.unwrap();
@@ -37,7 +37,7 @@ fn read_post_path(path: &Path) -> Option<PostData> {
         content: content.trim().to_string(),
     };
     log::trace!("{:?}", postdata);
-    Some(postdata)
+    Ok(postdata)
 }
 
 impl FileBackend {
@@ -57,7 +57,7 @@ impl FileBackend {
 
 impl Backend for FileBackend {
     /// Create
-    fn create_post(&self, postdata: &PostData) -> Option<PostData> {
+    fn create_post(&self, postdata: &PostData) -> Result<PostData, ()> {
         // make data
         let PostData {
             title,
@@ -75,26 +75,27 @@ impl Backend for FileBackend {
                 let _n = file.write(markdown.as_bytes());
                 let postdata = postdata.clone();
                 log::trace!("{:?}", postdata);
-                Some(postdata)
+                Ok(postdata)
             }
             Err(e) => {
                 log::warn!("{:?}", e);
-                None
+                Err(())
             }
         }
     }
     /// Read
-    fn read_post(&self, slug: &str) -> Option<PostData> {
+    fn read_post(&self, slug: &str) -> Result<PostData, ()> {
         let path = self.slug_to_path(slug);
         read_post_path(&path)
     }
     /// List
-    fn list_posts(&self) -> Vec<PostData> {
+    fn list_posts(&self) -> Result<Vec<PostData>, ()> {
         let mut post_vec: Vec<PostData> = Vec::new();
         let FileBackend { posts_dir_path } = self;
         match std::fs::read_dir(posts_dir_path) {
             Err(e) => {
                 log::warn!("{:?}", e);
+                return Err(());
             }
             Ok(paths) => {
                 // log::trace!("{:?}", paths);
@@ -106,14 +107,14 @@ impl Backend for FileBackend {
             }
         };
         log::trace!("{:?}", post_vec);
-        post_vec
+        Ok(post_vec)
     }
     /// Update
-    fn update_post(&self, postdata: &PostData) -> Option<PostData> {
+    fn update_post(&self, postdata: &PostData) -> Result<PostData, ()> {
         todo!()
     }
     /// Delete
-    fn delete_post(&self, postdata: &PostData) -> Option<PostData> {
+    fn delete_post(&self, postdata: &PostData) -> Result<(), ()> {
         todo!()
     }
 }
@@ -134,7 +135,7 @@ mod tests {
 
         // check before create
         let readdata_before = filebackend.read_post(&slug);
-        assert!(readdata_before.is_none());
+        assert!(readdata_before.is_err());
 
         // create
         let createdata = PostData {
@@ -171,7 +172,7 @@ mod tests {
         let _ = pretty_env_logger::try_init();
         let posts_dir = "./example/posts";
         let filebackend = FileBackend::new(posts_dir);
-        let post_vec = filebackend.list_posts();
+        let post_vec = filebackend.list_posts().unwrap();
         assert!(post_vec[0].slug.eq("sample1"));
         assert!(post_vec[0].title.eq("sample 1"));
         assert!(post_vec[1].slug.eq("sample2"));
@@ -183,6 +184,6 @@ mod tests {
         let posts_dir = "./this file does not exists";
         let filebackend = FileBackend::new(posts_dir);
         let metadata = filebackend.list_posts();
-        assert!(metadata.is_empty());
+        assert!(metadata.is_err());
     }
 }

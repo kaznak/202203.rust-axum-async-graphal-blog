@@ -9,13 +9,13 @@ pub struct PostData {
 /// Backend の　trait
 pub trait Backend {
     /// Create
-    fn create_post(&self, postdata: &PostData) -> Option<PostData>;
+    fn create_post(&self, postdata: &PostData) -> Result<PostData, ()>;
     /// Read
-    fn read_post(&self, slug: &str) -> Option<PostData>;
+    fn read_post(&self, slug: &str) -> Result<PostData, ()>;
     /// List
-    fn list_posts(&self) -> Vec<PostData>;
+    fn list_posts(&self) -> Result<Vec<PostData>, ()>;
     /// Update
-    fn update_post(&self, postdata: &PostData) -> Option<PostData>;
+    fn update_post(&self, postdata: &PostData) -> Result<PostData, ()>;
     /// Delete
-    fn delete_post(&self, postdata: &PostData) -> Option<PostData>;
+    fn delete_post(&self, postdata: &PostData) -> Result<(), ()>;
 }
