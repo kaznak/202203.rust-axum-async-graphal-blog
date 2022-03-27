@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::{fs::File, io::Read};
+use std::{fs::File, io::Read, path::Path};
 
 #[derive(Deserialize, Serialize, PartialEq, Debug)]
 pub struct PostFrontMatter {
@@ -7,13 +7,35 @@ pub struct PostFrontMatter {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct PostMetaData {
-    pub front_matter: PostFrontMatter,
+pub struct PostData {
+    pub title: String,
     pub slug: String,
+    pub content: String,
 }
 
-pub fn list_posts(posts_dir: &str) -> Vec<PostMetaData> {
-    let mut postdata: Vec<PostMetaData> = Vec::new();
+fn read_post_path(path: &Path) -> Option<PostData> {
+    let slug = path.file_stem().unwrap().to_str().unwrap().to_string();
+    let mut file = File::open(path).unwrap();
+    let mut cont = String::new();
+    let _n = file.read_to_string(&mut cont).unwrap();
+    let (front_matter, content) = serde_frontmatter::deserialize::<PostFrontMatter>(&cont).unwrap();
+    let PostFrontMatter { title } = front_matter;
+    let postdata = PostData {
+        title,
+        slug,
+        content,
+    };
+    Some(postdata)
+}
+
+pub fn read_post_slug(posts_dir: &str, slug: &str) -> Option<PostData> {
+    let path = Path::new(posts_dir).join(slug).with_extension("md");
+    log::trace!("{:?}", path);
+    read_post_path(&path)
+}
+
+pub fn list_posts(posts_dir: &str) -> Vec<PostData> {
+    let mut post_vec: Vec<PostData> = Vec::new();
     match std::fs::read_dir(posts_dir) {
         Err(e) => {
             log::warn!("{:?}", e);
@@ -22,40 +44,36 @@ pub fn list_posts(posts_dir: &str) -> Vec<PostMetaData> {
             // log::trace!("{:?}", paths);
             for direntry_result in paths {
                 let path = direntry_result.unwrap().path();
-                let slug = path.file_stem().unwrap().to_str().unwrap().to_string();
-                let mut file = File::open(path).unwrap();
-                // log::trace!("{:?}", file);
-                let mut cont = String::new();
-                // log::trace!("{:?}", cont);
-                let _n = file.read_to_string(&mut cont).unwrap();
-                // log::trace!("{:?}", _n);
-                let (front_matter, _content) =
-                    serde_frontmatter::deserialize::<PostFrontMatter>(&cont).unwrap();
-                // log::trace!("{:?}", front_matter);
-                // log::trace!("{:?}", _content);
-                let metadata = PostMetaData { front_matter, slug };
-                postdata.push(metadata);
+                let postdata = read_post_path(&path).unwrap();
+                post_vec.push(postdata);
             }
         }
     };
-    log::trace!("{:?}", postdata);
-    postdata
+    log::trace!("{:?}", post_vec);
+    post_vec
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
-    fn success() {
+    fn read_post_slug_success() {
         let _ = pretty_env_logger::try_init();
-        let metadata = list_posts("./example/posts");
-        assert!(metadata[0].slug.eq("sample1"));
-        assert!(metadata[0].front_matter.title.eq("sample 1"));
-        assert!(metadata[1].slug.eq("sample2"));
-        assert!(metadata[1].front_matter.title.eq("sample 2"));
+        let post = read_post_slug("./example/posts", "sample1").unwrap();
+        assert!(post.slug.eq("sample1"));
+        assert!(post.title.eq("sample 1"));
     }
     #[test]
-    fn not_exists() {
+    fn list_posts_success() {
+        let _ = pretty_env_logger::try_init();
+        let post_vec = list_posts("./example/posts");
+        assert!(post_vec[0].slug.eq("sample1"));
+        assert!(post_vec[0].title.eq("sample 1"));
+        assert!(post_vec[1].slug.eq("sample2"));
+        assert!(post_vec[1].title.eq("sample 2"));
+    }
+    #[test]
+    fn list_posts_not_exists() {
         let _ = pretty_env_logger::try_init();
         let metadata = list_posts("./this file does not exists");
         assert!(metadata.is_empty());
