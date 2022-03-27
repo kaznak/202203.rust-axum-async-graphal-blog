@@ -1,10 +1,14 @@
 {
     "cSpell.words": [
         "createdata",
+        "delresult",
         "direntry",
         "filebackend",
+        "finiret",
+        "hoge",
         "postdata",
         "readdata",
-        "retdata"
+        "retdata",
+        "updatedata"
     ]
 }
