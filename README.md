@@ -17,8 +17,8 @@
 
 ## Reference
 
+- [Rust を学ぶ](https://www.rust-lang.org/ja/learn)
 - [axum](https://github.com/tokio-rs/axum)
 - [async-graphql](https://github.com/async-graphql/async-graphql)
     - [examples](https://github.com/async-graphql/examples)
     - [document](https://async-graphql.github.io/async-graphql/en/index.html)
-
