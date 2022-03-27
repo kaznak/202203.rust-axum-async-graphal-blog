@@ -1,4 +1,3 @@
-
 /// Post のデータ
 #[derive(PartialEq, Debug)]
 pub struct PostData {
@@ -8,7 +7,7 @@ pub struct PostData {
 }
 
 /// Backend の　trait
-trait Backend {
+pub trait Backend {
     /// Create
     fn creates_post(&self, postdata: &PostData) -> Option<PostData>;
     /// Read
