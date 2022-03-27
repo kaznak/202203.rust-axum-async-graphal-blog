@@ -1,7 +1,7 @@
 ---
 title: sample 2
----
 
+---
 # sample2 h1
 
 sample 2 body
