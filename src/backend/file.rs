@@ -8,7 +8,7 @@ use std::{
 
 /// Post の front matter のデータ
 #[derive(Deserialize, Serialize, PartialEq, Debug)]
-pub struct PostFrontMatter {
+struct PostFrontMatter {
     pub title: String,
 }
 
