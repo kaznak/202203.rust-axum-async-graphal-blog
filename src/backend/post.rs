@@ -1,8 +1,8 @@
 /// Post のデータ
 #[derive(Clone, PartialEq, Debug)]
 pub struct PostData {
-    pub title: String,
     pub slug: String,
+    pub title: String,
     pub content: String,
 }
 
@@ -17,5 +17,5 @@ pub trait Backend {
     /// Update
     fn update_post(&self, postdata: &PostData) -> Result<PostData, ()>;
     /// Delete
-    fn delete_post(&self, postdata: &PostData) -> Result<(), ()>;
+    fn delete_post(&self, slug: &str) -> Result<(), ()>;
 }

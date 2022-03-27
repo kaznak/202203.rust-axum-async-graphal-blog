@@ -1,24 +1,79 @@
-use async_graphql::{Context, EmptySubscription, Object, Schema, SimpleObject, Upload, ID};
-use futures::lock::Mutex;
-use slab::Slab;
+use crate::backend::{file::FileBackend, post::*};
+use async_graphql::{Context, EmptySubscription, Object, Schema, SimpleObject, ID};
 
-pub type FilesSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
+pub type GraphQLSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
 
 #[derive(Clone, SimpleObject)]
-pub struct FileInfo {
-    id: ID,
-    url: String,
+pub struct Post {
+    slug: ID,
+    title: String,
+    content: String,
 }
 
-pub type Storage = Mutex<Slab<FileInfo>>;
+impl Into<PostData> for Post {
+    fn into(self) -> PostData {
+        let Post {
+            slug,
+            title,
+            content,
+        } = self;
+        PostData {
+            title,
+            slug: slug.to_string(),
+            content,
+        }
+    }
+}
+
+impl From<PostData> for Post {
+    fn from(postdata: PostData) -> Self {
+        let PostData {
+            title,
+            slug,
+            content,
+        } = postdata;
+        Post {
+            slug: ID::from(slug),
+            title,
+            content,
+        }
+    }
+}
+
+impl From<&PostData> for Post {
+    fn from(postdata: &PostData) -> Self {
+        let PostData {
+            title,
+            slug,
+            content,
+        } = postdata;
+        Post {
+            slug: ID::from(slug),
+            title: title.clone(),
+            content: content.clone(),
+        }
+    }
+}
+
+pub type Storage = FileBackend;
 
 pub struct QueryRoot;
 
 #[Object]
 impl QueryRoot {
-    async fn uploads(&self, ctx: &Context<'_>) -> Vec<FileInfo> {
-        let storage = ctx.data_unchecked::<Storage>().lock().await;
-        storage.iter().map(|(_, file)| file).cloned().collect()
+    async fn post<'ctx>(&self, ctx: &Context<'ctx>, slug: String) -> Result<Post, String> {
+        let backend = ctx.data::<Storage>().unwrap();
+        match backend.read_post(&slug) {
+            Ok(p) => Ok(Post::from(p)),
+            Err(_) => Err("error!".to_string()),
+        }
+    }
+    async fn list<'ctx>(&self, ctx: &Context<'ctx>) -> Result<Vec<Post>, String> {
+        let backend = ctx.data::<Storage>().unwrap();
+        match backend.list_posts() {
+            Ok(l) => Ok(l.iter().map(|pd| Post::from(pd)).collect()),
+            Err(_) => Err("error!".to_string()),
+        }
     }
 }
 
@@ -26,32 +81,48 @@ pub struct MutationRoot;
 
 #[Object]
 impl MutationRoot {
-    async fn single_upload(&self, ctx: &Context<'_>, file: Upload) -> FileInfo {
-        let mut storage = ctx.data_unchecked::<Storage>().lock().await;
-        println!("files count: {}", storage.len());
-        let entry = storage.vacant_entry();
-        let upload = file.value(ctx).unwrap();
-        let info = FileInfo {
-            id: entry.key().into(),
-            url: upload.filename,
+    async fn create<'ctx>(
+        &self,
+        ctx: &Context<'ctx>,
+        slug: ID,
+        title: String,
+        content: String,
+    ) -> Result<Post, String> {
+        let backend = ctx.data::<Storage>().unwrap();
+        let postdata = PostData {
+            slug: String::from(slug),
+            title,
+            content,
         };
-        entry.insert(info.clone());
-        info
-    }
-
-    async fn multiple_upload(&self, ctx: &Context<'_>, files: Vec<Upload>) -> Vec<FileInfo> {
-        let mut infos = Vec::new();
-        let mut storage = ctx.data_unchecked::<Storage>().lock().await;
-        for file in files {
-            let entry = storage.vacant_entry();
-            let upload = file.value(ctx).unwrap();
-            let info = FileInfo {
-                id: entry.key().into(),
-                url: upload.filename.clone(),
-            };
-            entry.insert(info.clone());
-            infos.push(info)
+        match backend.create_post(&postdata) {
+            Ok(p) => Ok(Post::from(p)),
+            Err(_) => Err("error!".to_string()),
         }
-        infos
+    }
+    async fn update<'ctx>(
+        &self,
+        ctx: &Context<'ctx>,
+        slug: ID,
+        title: String,
+        content: String,
+    ) -> Result<Post, String> {
+        let backend = ctx.data::<Storage>().unwrap();
+        let postdata = PostData {
+            slug: String::from(slug),
+            title,
+            content,
+        };
+        match backend.create_post(&postdata) {
+            Ok(p) => Ok(Post::from(p)),
+            Err(_) => Err("error!".to_string()),
+        }
+    }
+    async fn delete<'ctx>(&self, ctx: &Context<'ctx>, slug: ID) -> Result<ID, String> {
+        let backend = ctx.data::<Storage>().unwrap();
+        let slug_str = String::from(slug.clone());
+        match backend.delete_post(&slug_str) {
+            Ok(_) => Ok(slug),
+            Err(_) => Err("error!".to_string()),
+        }
     }
 }

@@ -8,9 +8,11 @@ use axum::Router;
 use hyper::{Method, Server};
 use tower_http::cors::{CorsLayer, Origin};
 
-use rust_axum_async_graphql_blog::graphql::model::{FilesSchema, MutationRoot, QueryRoot, Storage};
+use rust_axum_async_graphql_blog::graphql::model::{
+    GraphQLSchema, MutationRoot, QueryRoot, Storage,
+};
 
-async fn graphql_handler(schema: Extension<FilesSchema>, req: GraphQLRequest) -> GraphQLResponse {
+async fn graphql_handler(schema: Extension<GraphQLSchema>, req: GraphQLRequest) -> GraphQLResponse {
     schema.execute(req.0).await.into()
 }
 
