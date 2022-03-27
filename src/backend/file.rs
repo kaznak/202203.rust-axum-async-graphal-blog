@@ -40,6 +40,7 @@ fn read_post_path(path: &Path) -> Result<PostData, ()> {
     Ok(postdata)
 }
 
+/// PostData からファイルシステム操作のためのデータを構築する
 fn build_write_data(filebackend: &FileBackend, postdata: &PostData) -> (PathBuf, String) {
     // make data
     let PostData {
