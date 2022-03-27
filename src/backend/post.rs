@@ -1,5 +1,5 @@
 /// Post のデータ
-#[derive(PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct PostData {
     pub title: String,
     pub slug: String,
@@ -9,7 +9,7 @@ pub struct PostData {
 /// Backend の　trait
 pub trait Backend {
     /// Create
-    fn creates_post(&self, postdata: &PostData) -> Option<PostData>;
+    fn create_post(&self, postdata: &PostData) -> Option<PostData>;
     /// Read
     fn read_post(&self, slug: &str) -> Option<PostData>;
     /// List

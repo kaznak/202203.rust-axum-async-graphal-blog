@@ -2,7 +2,7 @@ use crate::backend::post::{Backend, PostData};
 use serde::{Deserialize, Serialize};
 use std::{
     fs::File,
-    io::Read,
+    io::{Read, Write},
     path::{Path, PathBuf},
 };
 
@@ -20,7 +20,13 @@ pub struct FileBackend {
 /// Post を path で指定して読み出す。
 fn read_post_path(path: &Path) -> Option<PostData> {
     let slug = path.file_stem().unwrap().to_str().unwrap().to_string();
-    let mut file = File::open(path).unwrap();
+    let file_opt = File::open(path);
+    if let Err(e) = file_opt {
+        log::warn!("{:?}", e);
+        return None;
+    }
+
+    let mut file = file_opt.unwrap();
     let mut cont = String::new();
     let _n = file.read_to_string(&mut cont).unwrap();
     let (front_matter, content) = serde_frontmatter::deserialize::<PostFrontMatter>(&cont).unwrap();
@@ -30,6 +36,7 @@ fn read_post_path(path: &Path) -> Option<PostData> {
         slug,
         content,
     };
+    log::trace!("{:?}", postdata);
     Some(postdata)
 }
 
@@ -50,7 +57,7 @@ impl FileBackend {
 
 impl Backend for FileBackend {
     /// Create
-    fn creates_post(&self, postdata: &PostData) -> Option<PostData> {
+    fn create_post(&self, postdata: &PostData) -> Option<PostData> {
         // make data
         let PostData {
             title,
@@ -62,9 +69,19 @@ impl Backend for FileBackend {
         };
         let markdown = serde_frontmatter::serialize(front_matter, content).unwrap();
         let path = self.slug_to_path(slug);
-
         // write
-        todo!()
+        match File::create(path) {
+            Ok(mut file) => {
+                let _n = file.write(markdown.as_bytes());
+                let postdata = postdata.clone();
+                log::trace!("{:?}", postdata);
+                Some(postdata)
+            }
+            Err(e) => {
+                log::warn!("{:?}", e);
+                None
+            }
+        }
     }
     /// Read
     fn read_post(&self, slug: &str) -> Option<PostData> {
@@ -104,6 +121,41 @@ impl Backend for FileBackend {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn create_post_success() {
+        let _ = pretty_env_logger::try_init();
+        let posts_dir = "./example/posts";
+        let filebackend = FileBackend::new(posts_dir);
+        let slug = "sample3";
+
+        // prepare
+        let path = filebackend.slug_to_path(slug);
+        let _ = std::fs::remove_file(path);
+
+        // check before create
+        let readdata_before = filebackend.read_post(&slug);
+        assert!(readdata_before.is_none());
+
+        // create
+        let createdata = PostData {
+            title: String::from("Sample Post 3"),
+            slug: String::from(slug),
+            content: String::from("a test body"),
+        };
+        log::trace!("createdata: {:?}", createdata);
+        let retdata = filebackend.create_post(&createdata).unwrap();
+        log::trace!("retdata: {:?}", retdata);
+        assert!(retdata.eq(&createdata));
+
+        // check after create
+        let readdata = filebackend.read_post(slug).unwrap();
+        log::trace!("readdata: {:?}", readdata);
+        assert!(readdata.eq(&createdata));
+
+        // finalize
+        let path = filebackend.slug_to_path(slug);
+        let _ = std::fs::remove_file(path);
+    }
     #[test]
     fn read_post_success() {
         let _ = pretty_env_logger::try_init();
