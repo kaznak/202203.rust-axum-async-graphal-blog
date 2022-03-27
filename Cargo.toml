@@ -8,5 +8,15 @@ edition = "2021"
 [dependencies]
 log = "0.4.16"
 pretty_env_logger = "0.4.0"
+# backend
 serde = "1.0.136"
 serde-frontmatter = "0.1.0"
+# bff
+async-graphql = "3.0.36"
+async-graphql-axum = "3.0.36"
+axum = "0.4"
+tokio = { version = "1.8", features = ["macros", "rt-multi-thread"] }
+hyper = "0.14"
+tower-http = { version = "0.2.1", features = ["cors"] }
+slab = "0.4.2"
+futures = "0.3.0"
