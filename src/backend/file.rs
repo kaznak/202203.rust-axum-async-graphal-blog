@@ -1,7 +1,7 @@
 use crate::backend::post::{Backend, PostData};
 use serde::{Deserialize, Serialize};
 use std::{
-    fs::File,
+    fs::{File, OpenOptions},
     io::{Read, Write},
     path::{Path, PathBuf},
 };
@@ -40,6 +40,21 @@ fn read_post_path(path: &Path) -> Result<PostData, ()> {
     Ok(postdata)
 }
 
+fn build_write_data(filebackend: &FileBackend, postdata: &PostData) -> (PathBuf, String) {
+    // make data
+    let PostData {
+        title,
+        slug,
+        content,
+    } = postdata;
+    let front_matter = PostFrontMatter {
+        title: title.clone(),
+    };
+    let markdown = serde_frontmatter::serialize(front_matter, content.trim()).unwrap();
+    let path = filebackend.slug_to_path(slug);
+    (path, markdown)
+}
+
 impl FileBackend {
     /// Constructor
     pub fn new(posts_dir: &str) -> FileBackend {
@@ -58,17 +73,7 @@ impl FileBackend {
 impl Backend for FileBackend {
     /// Create
     fn create_post(&self, postdata: &PostData) -> Result<PostData, ()> {
-        // make data
-        let PostData {
-            title,
-            slug,
-            content,
-        } = postdata;
-        let front_matter = PostFrontMatter {
-            title: title.clone(),
-        };
-        let markdown = serde_frontmatter::serialize(front_matter, content.trim()).unwrap();
-        let path = self.slug_to_path(slug);
+        let (path, markdown) = build_write_data(self, postdata);
         // write
         match File::create(path) {
             Ok(mut file) => {
@@ -111,11 +116,37 @@ impl Backend for FileBackend {
     }
     /// Update
     fn update_post(&self, postdata: &PostData) -> Result<PostData, ()> {
-        todo!()
+        let (path, markdown) = build_write_data(self, postdata);
+        // write
+        match OpenOptions::new()
+            .write(true)
+            .create(false)
+            .truncate(true)
+            .open(path)
+        {
+            Ok(mut file) => {
+                let _n = file.write(markdown.as_bytes());
+                let postdata = postdata.clone();
+                log::trace!("{:?}", postdata);
+                Ok(postdata)
+            }
+            Err(e) => {
+                log::warn!("{:?}", e);
+                Err(())
+            }
+        }
     }
     /// Delete
     fn delete_post(&self, postdata: &PostData) -> Result<(), ()> {
-        todo!()
+        let slug = &postdata.slug;
+        let path = self.slug_to_path(&slug);
+        match std::fs::remove_file(path) {
+            Ok(()) => Ok(()),
+            Err(e) => {
+                log::warn!("{:?}", e);
+                Err(())
+            }
+        }
     }
 }
 
