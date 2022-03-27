@@ -217,4 +217,42 @@ mod tests {
         let metadata = filebackend.list_posts();
         assert!(metadata.is_err());
     }
+    #[test]
+    fn update_post_success() {
+        let _ = pretty_env_logger::try_init();
+        let posts_dir = "./example/posts";
+        let filebackend = FileBackend::new(posts_dir);
+        let slug = "sample2";
+
+        // check before update
+        let readdata_before = filebackend.read_post(&slug);
+        assert!(readdata_before.is_ok());
+        let original_postdata = readdata_before.unwrap();
+        let PostData {
+            title,
+            slug,
+            content,
+        } = original_postdata.clone();
+        assert!(!content.eq("hoge"));
+
+        // update
+        let updatedata = PostData {
+            title: title.clone(),
+            slug: slug.clone(),
+            content: String::from("hoge"),
+        };
+        log::trace!("createdata: {:?}", updatedata);
+        let retdata = filebackend.update_post(&updatedata).unwrap();
+        log::trace!("retdata: {:?}", retdata);
+        assert!(retdata.eq(&updatedata));
+
+        // check after create
+        let readdata = filebackend.read_post(&slug).unwrap();
+        log::trace!("readdata: {:?}", readdata);
+        assert!(readdata.eq(&updatedata));
+
+        // finalize
+        let finiret = filebackend.update_post(&original_postdata).unwrap();
+        assert!(finiret.eq(&original_postdata));
+    }
 }
