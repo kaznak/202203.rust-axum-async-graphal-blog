@@ -34,7 +34,7 @@ fn read_post_path(path: &Path) -> Option<PostData> {
     let postdata = PostData {
         title,
         slug,
-        content,
+        content: content.trim().to_string(),
     };
     log::trace!("{:?}", postdata);
     Some(postdata)
@@ -67,7 +67,7 @@ impl Backend for FileBackend {
         let front_matter = PostFrontMatter {
             title: title.clone(),
         };
-        let markdown = serde_frontmatter::serialize(front_matter, content).unwrap();
+        let markdown = serde_frontmatter::serialize(front_matter, content.trim()).unwrap();
         let path = self.slug_to_path(slug);
         // write
         match File::create(path) {
