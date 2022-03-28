@@ -17,14 +17,6 @@ pub struct FileBackend {
     pub posts_dir_path: PathBuf,
 }
 
-static POST_PATH: &str = "./example/posts";
-
-impl Default for FileBackend {
-    fn default() -> Self {
-        FileBackend::new(POST_PATH)
-    }
-}
-
 /// Post を path で指定して読み出す。
 fn read_post_path(path: &Path) -> Result<PostData, ()> {
     let slug = path.file_stem().unwrap().to_str().unwrap().to_string();
@@ -164,7 +156,7 @@ mod tests {
     #[test]
     fn create_post_delete_post_success() {
         let _ = pretty_env_logger::try_init();
-        let filebackend = FileBackend::default();
+        let filebackend = FileBackend::new("./example/posts");
         let slug = "sample3";
 
         // prepare
@@ -198,7 +190,7 @@ mod tests {
     #[test]
     fn read_post_success() {
         let _ = pretty_env_logger::try_init();
-        let filebackend = FileBackend::default();
+        let filebackend = FileBackend::new("./example/posts");
         let slug = "sample1";
         let post = filebackend.read_post(slug).unwrap();
         assert!(post.slug.eq("sample1"));
@@ -207,7 +199,7 @@ mod tests {
     #[test]
     fn list_posts_success() {
         let _ = pretty_env_logger::try_init();
-        let filebackend = FileBackend::default();
+        let filebackend = FileBackend::new("./example/posts");
         let post_vec = filebackend.list_posts().unwrap();
         assert!(post_vec[0].slug.eq("sample1"));
         assert!(post_vec[0].title.eq("sample 1"));
@@ -225,7 +217,7 @@ mod tests {
     #[test]
     fn update_post_success() {
         let _ = pretty_env_logger::try_init();
-        let filebackend = FileBackend::default();
+        let filebackend = FileBackend::new("./example/posts");
         let slug = "sample2";
 
         // check before update
