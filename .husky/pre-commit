@@ -1,4 +1,10 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
+cd backend
+rust fmt
+cd ../
+
+cd frontend
 yarn run lint-staged
+cd ../
