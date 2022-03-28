@@ -22,8 +22,10 @@ async fn graphql_playground() -> impl IntoResponse {
 
 #[tokio::main]
 async fn main() {
+    let _ = pretty_env_logger::try_init();
+
     let schema = Schema::build(QueryRoot, MutationRoot, EmptySubscription)
-        .data(Storage::default())
+        .data(Storage::new("./posts"))
         .finish();
 
     println!("Playground: http://localhost:8000");
