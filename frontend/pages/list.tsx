@@ -27,12 +27,8 @@ type PostList = {
 
 const getPosts = () => {
   const { data, error } = useSWR<PostList>(query, (query) => {
-    let ret = request(API_ENDPOINT, query)
-    console.log(ret)
-    return ret
+    request(API_ENDPOINT, query)
   })
-
-  console.log({ query, data, error })
 
   if (error) return <div>failed to load</div>
   if (!data) return <div>loading...</div>
