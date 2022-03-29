@@ -30,8 +30,18 @@ export function Editor({ slug, title, content }: Partial<EditorPorps>) {
 
   return (
     <Layout title="Editor">
-      <button onClick={postHandler}>Create/Update</button>
-      <button onClick={postHandler}>Delete</button>
+      <button
+        onClick={postHandler}
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold m-2 py-2 px-4 rounded"
+      >
+        Create/Update
+      </button>
+      <button
+        onClick={postHandler}
+        className="bg-red-500 hover:bg-red-700 text-white font-bold m-2 py-2 px-4 rounded"
+      >
+        Delete
+      </button>
       <h2>Slug</h2>
       <input
         name="slug"
