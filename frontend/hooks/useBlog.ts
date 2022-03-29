@@ -3,11 +3,15 @@ import useSWR from 'swr'
 
 import { API_ENDPOINT } from 'configs/app'
 
-export type PostList = {
-  list: {
-    slug: string
-    title: string
-  }[]
+export type Post = {
+  slug: string
+  title: string
+  content: string
+}
+
+/// List
+export type BlogPostList = {
+  list: Array<Pick<Post, 'slug' | 'title'>>
 }
 
 export function useBlogPostList() {
@@ -20,14 +24,12 @@ export function useBlogPostList() {
     }
   `
 
-  return useSWR<PostList>(query, (query) => request(API_ENDPOINT, query))
+  return useSWR<BlogPostList>(query, (query) => request(API_ENDPOINT, query))
 }
 
-export type PostData = {
-  post: {
-    title: string
-    content: string
-  }
+/// Post
+export type BlogPost = {
+  post: Pick<Post, 'title' | 'content'>
 }
 
 export function useBlogPost(slug?: string) {
@@ -44,7 +46,7 @@ export function useBlogPost(slug?: string) {
     slug,
   }
 
-  return useSWR<PostData>(slug ? query : null, (query) =>
+  return useSWR<BlogPost>(slug ? query : null, (query) =>
     request(API_ENDPOINT, query, variables)
   )
 }

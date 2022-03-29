@@ -1,4 +1,5 @@
 import Head from 'next/head'
+import Link from 'next/link'
 import Image from 'next/image'
 
 import vercelLogoSvg from 'public/vercel.svg'
@@ -12,6 +13,7 @@ export function Layout({ title, children }) {
       </Head>
 
       <main className="w-full flex-1 px-20">
+        <Link href={`/posts`}>goto list</Link>
         <h1 className="text-6xl font-bold border-b-8">{title}</h1>
         <section>{children}</section>
       </main>
