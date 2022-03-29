@@ -1,4 +1,5 @@
 import Head from 'next/head'
+import Link from 'next/link'
 import Image from 'next/image'
 
 import { request, gql } from 'graphql-request'
@@ -19,8 +20,8 @@ const query = gql`
 
 type PostList = {
   list: {
-    slug: string;
-    title: string;
+    slug: string
+    title: string
   }[]
 }
 
@@ -29,14 +30,17 @@ const getPosts = () => {
     let ret = request(API_ENDPOINT, query)
     console.log(ret)
     return ret
-  }
-  )
+  })
 
   console.log({ query, data, error })
 
   if (error) return <div>failed to load</div>
   if (!data) return <div>loading...</div>
-  return data.list.map((post) => <li key={post.slug}>{post.title}</li>)
+  return data.list.map((post) => (
+    <li key={post.slug}>
+      <Link href={`/posts/${post.slug}`}>{post.title}</Link>
+    </li>
+  ))
 }
 
 export function List() {
