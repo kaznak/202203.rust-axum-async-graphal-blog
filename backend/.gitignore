@@ -10,3 +10,4 @@ Cargo.lock
 **/*.rs.bk
 
 /example/posts/sample3.md
+/posts/
