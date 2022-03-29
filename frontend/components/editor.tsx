@@ -1,23 +1,30 @@
-import { ChangeEvent, useState } from 'react'
+import { useState } from 'react'
+import { useRouter } from 'next/router'
 import Layout from 'components/layout'
 
-interface EditorPorps {
+import { blogCreate, blogDelete } from 'hooks/useBlog'
+
+interface EditorProps {
+  pageTitle: string
   slug: string
   title: string
   content: string
 }
 
-export function Editor({ slug, title, content }: Partial<EditorPorps>) {
-  const [input, setInput] = useState<Partial<EditorPorps>>({
+export function Editor({
+  pageTitle,
+  slug,
+  title,
+  content,
+}: Partial<EditorProps>) {
+  const router = useRouter()
+  const [input, setInput] = useState<Partial<EditorProps>>({
     slug: slug ? slug : '',
     title: title ? title : '',
     content: content ? content : '',
   })
 
-  const postHandler = () => {
-    window.alert(`${input.slug} ${input.title} ${input.content}`)
-  }
-  const changeHandler = (event) => {
+  const changeHandler = (event: { target: any }) => {
     const target = event.target
     const value = target.value
     const name = target.name
@@ -29,15 +36,25 @@ export function Editor({ slug, title, content }: Partial<EditorPorps>) {
   }
 
   return (
-    <Layout title="Editor">
+    <Layout title={pageTitle ? pageTitle : 'Editor'}>
       <button
-        onClick={postHandler}
+        onClick={async (_) =>
+          blogCreate(input).then(() => {
+            window.alert('posted')
+            router.push(`/posts`)
+          })
+        }
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold m-2 py-2 px-4 rounded"
       >
         Create/Update
       </button>
       <button
-        onClick={postHandler}
+        onClick={async (_) =>
+          blogDelete(slug).then(() => {
+            window.alert('deleted')
+            router.push(`/posts`)
+          })
+        }
         className="bg-red-500 hover:bg-red-700 text-white font-bold m-2 py-2 px-4 rounded"
       >
         Delete
@@ -49,6 +66,7 @@ export function Editor({ slug, title, content }: Partial<EditorPorps>) {
         value={input.slug}
         onChange={changeHandler}
         className="border-2"
+        readOnly={!!slug}
       ></input>
       <h2>Title</h2>
       <input

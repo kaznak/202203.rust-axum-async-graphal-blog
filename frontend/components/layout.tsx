@@ -4,7 +4,13 @@ import Image from 'next/image'
 
 import vercelLogoSvg from 'public/vercel.svg'
 
-export function Layout({ title, children }) {
+interface LayoutProps {
+  title: string
+  editSlug: string
+  children: any
+}
+
+export function Layout({ title, editSlug, children }: Partial<LayoutProps>) {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
       <Head>
@@ -13,7 +19,17 @@ export function Layout({ title, children }) {
       </Head>
 
       <main className="w-full flex-1 px-20">
-        <Link href={`/posts`}>goto list</Link>
+        <span className="mx-4">
+          <Link href={`/posts`}>goto list</Link>
+        </span>
+        <span className="mx-4">
+          <Link href={`/posts-editor/`}>create</Link>
+        </span>
+        {editSlug ? (
+          <span className="mx-4">
+            <Link href={`/posts-editor/${editSlug}`}>edit</Link>
+          </span>
+        ) : null}
         <h1 className="text-6xl font-bold border-b-8">{title}</h1>
         <section>{children}</section>
       </main>

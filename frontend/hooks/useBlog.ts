@@ -50,3 +50,63 @@ export function useBlogPost(slug?: string) {
     request(API_ENDPOINT, query, variables)
   )
 }
+
+/// Create
+export type BlogCreate = {
+  create: Post
+}
+
+export async function blogCreate(post: Post) {
+  const query = gql`
+    mutation BlogCreate($post: PostInput!) {
+      create(post: $post) {
+        slug
+        title
+        content
+      }
+    }
+  `
+  const variables = {
+    post,
+  }
+
+  return request(API_ENDPOINT, query, variables)
+}
+
+/// Update
+export type BlogUpdate = {
+  update: Partial<Post>
+}
+
+export async function blogUpdate(
+  post: Pick<Post, 'slug'> & Partial<Omit<Post, 'slug'>>
+) {
+  const query = gql`
+    mutation BlogUpdate($post: PostOpt!) {
+      update(post: $post) {
+        slug
+        title
+        content
+      }
+    }
+  `
+  const variables = {
+    post,
+  }
+
+  return request(API_ENDPOINT, query, variables)
+}
+
+/// Delete
+export async function blogDelete(slug: number) {
+  const query = gql`
+    mutation BlogDelete($slug: ID!) {
+      delete(slug: $slug)
+    }
+  `
+  const variables = {
+    slug,
+  }
+
+  return request(API_ENDPOINT, query, variables)
+}
