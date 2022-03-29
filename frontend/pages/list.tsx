@@ -2,33 +2,12 @@ import Head from 'next/head'
 import Link from 'next/link'
 import Image from 'next/image'
 
-import { request, gql } from 'graphql-request'
-import useSWR from 'swr'
-
-import { API_ENDPOINT } from 'configs/app'
+import { useBlogPostList } from 'hooks/useBlog'
 
 import vercelLogoSvg from 'public/vercel.svg'
 
-const query = gql`
-  query List {
-    list {
-      slug
-      title
-    }
-  }
-`
-
-type PostList = {
-  list: {
-    slug: string
-    title: string
-  }[]
-}
-
 export function List() {
-  const { data, error } = useSWR<PostList>(query, (query) =>
-    request(API_ENDPOINT, query)
-  )
+  const { data, error } = useBlogPostList()
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
@@ -38,7 +17,7 @@ export function List() {
       </Head>
 
       <main className="w-full flex-1 px-20">
-        <h1 className="text-6xl font-bold border-b-8">List</h1>
+        <h1 className="text-6xl font-bold border-b-4">List</h1>
 
         {error ? (
           <div>failed to load</div>
