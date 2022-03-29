@@ -15,8 +15,8 @@ describe('Home page', () => {
   it('clicking button triggers alert', async () => {
     const { getByText } = render(<Home />, {})
     window.alert = jest.fn()
-    fireEvent.click(getByText('API Test Button'))
+    fireEvent.click(getByText('Button'))
     await waitFor(() => expect(window.alert).toHaveBeenCalledTimes(1))
-    expect(window.alert).toHaveBeenCalledWith('api returns: Jane Doe')
+    expect(window.alert).toHaveBeenCalledWith('pushed')
   })
 })

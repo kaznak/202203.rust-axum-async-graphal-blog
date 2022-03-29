@@ -1,9 +1,6 @@
 import Head from 'next/head'
 import Image from 'next/image'
 
-import { fetchJson } from 'lib/fetchJson'
-import type { HelloApiResponse } from 'lib/pages/api/hello'
-
 import vercelLogoSvg from 'public/vercel.svg'
 
 export function Home() {
@@ -32,15 +29,10 @@ export function Home() {
         <button
           className="my-3 px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10"
           onClick={async () => {
-            try {
-              const { name } = await fetchJson<HelloApiResponse>('/api/hello')
-              window.alert(`api returns: ${name}`)
-            } catch (error) {
-              console.error('An unexpected error happened:', error)
-            }
+            window.alert('pushed')
           }}
         >
-          API Test Button
+          Button
         </button>
 
         <div className="flex flex-wrap items-center justify-around max-w-4xl mt-6 sm:w-full">
