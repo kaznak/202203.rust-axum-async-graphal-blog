@@ -31,6 +31,7 @@ export function Editor({ slug, title, content }: Partial<EditorPorps>) {
   return (
     <Layout title="Editor">
       <button onClick={postHandler}>Create/Update</button>
+      <button onClick={postHandler}>Delete</button>
       <h2>Slug</h2>
       <input
         name="slug"
