@@ -3,13 +3,6 @@ import useSWR from 'swr'
 
 import { API_ENDPOINT } from 'configs/app'
 
-type PostList = {
-  list: {
-    slug: string
-    title: string
-  }[]
-}
-
 export function useBlogPostList() {
   const query = gql`
     query List {
@@ -19,6 +12,39 @@ export function useBlogPostList() {
       }
     }
   `
-  const ret = useSWR<PostList>(query, (query) => request(API_ENDPOINT, query))
-  return ret
+
+  type PostList = {
+    list: {
+      slug: string
+      title: string
+    }[]
+  }
+
+  return useSWR<PostList>(query, (query) => request(API_ENDPOINT, query))
+}
+
+export function useBlogPost(slug: string) {
+  const query = gql`
+    query Post($slug: String!) {
+      post(slug: $slug) {
+        title
+        content
+      }
+    }
+  `
+
+  const variables = {
+    slug,
+  }
+
+  type PostData = {
+    post: {
+      title: string
+      content: string
+    }
+  }
+
+  return useSWR<PostData>(query, (query) =>
+    request(API_ENDPOINT, query, variables)
+  )
 }
