@@ -25,21 +25,11 @@ type PostList = {
   }[]
 }
 
-const getPosts = () => {
-  const { data, error } = useSWR<PostList>(query, (query) => {
-    request(API_ENDPOINT, query)
-  })
-
-  if (error) return <div>failed to load</div>
-  if (!data) return <div>loading...</div>
-  return data.list.map((post) => (
-    <li key={post.slug}>
-      <Link href={`/posts/${post.slug}`}>{post.title}</Link>
-    </li>
-  ))
-}
-
 export function List() {
+  const { data, error } = useSWR<PostList>(query, (query) =>
+    request(API_ENDPOINT, query)
+  )
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen py-2">
       <Head>
@@ -50,7 +40,17 @@ export function List() {
       <main className="w-full flex-1 px-20">
         <h1 className="text-6xl font-bold border-b-8">List</h1>
 
-        {getPosts()}
+        {error ? (
+          <div>failed to load</div>
+        ) : !data ? (
+          <div>loading...</div>
+        ) : (
+          data.list.map((post) => (
+            <li key={post.slug}>
+              <Link href={`/posts/${post.slug}`}>{post.title}</Link>
+            </li>
+          ))
+        )}
       </main>
 
       <footer className="flex items-center justify-center w-full h-24 border-t">
