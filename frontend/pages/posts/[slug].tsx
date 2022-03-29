@@ -1,17 +1,16 @@
 import Head from 'next/head'
-import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { useBlogPost } from 'hooks/useBlog'
 
 import vercelLogoSvg from 'public/vercel.svg'
 
-export function List() {
+export function Post() {
   const router = useRouter()
   const { slug } = router.query
   console.log(slug)
   const { data, error } =
-    typeof slug == 'string' ? useBlogPost(slug) : useBlogPost('')
+    typeof slug == 'string' ? useBlogPost(slug) : useBlogPost()
   console.log({ data, error })
 
   return (
@@ -53,4 +52,4 @@ export function List() {
   )
 }
 
-export default List
+export default Post
