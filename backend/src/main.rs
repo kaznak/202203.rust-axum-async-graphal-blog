@@ -33,11 +33,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(graphql_playground).post(graphql_handler))
         .layer(Extension(schema))
-        .layer(
-            CorsLayer::new()
-                .allow_origin(Origin::predicate(|_, _| true))
-                .allow_methods(vec![Method::GET, Method::POST]),
-        );
+        .layer(CorsLayer::permissive());
 
     Server::bind(&"0.0.0.0:8000".parse().unwrap())
         .serve(app.into_make_service())
