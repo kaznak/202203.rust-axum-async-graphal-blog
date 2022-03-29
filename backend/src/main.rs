@@ -5,8 +5,8 @@ use axum::extract::Extension;
 use axum::response::{Html, IntoResponse};
 use axum::routing::get;
 use axum::Router;
-use hyper::{Method, Server};
-use tower_http::cors::{CorsLayer, Origin};
+use hyper::Server;
+use tower_http::cors::CorsLayer;
 
 use rust_axum_async_graphql_blog::graphql::model::{
     GraphQLSchema, MutationRoot, QueryRoot, Storage,
