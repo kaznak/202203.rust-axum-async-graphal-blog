@@ -25,6 +25,6 @@
 - [async-graphql](https://github.com/async-graphql/async-graphql)
     - [examples](https://github.com/async-graphql/examples)
     - [document](https://async-graphql.github.io/async-graphql/en/index.html)
-- [nextjs]()
+- [nextjs](https://nextjs.org/)
     - [examples/with-docker](https://github.com/vercel/next.js/tree/canary/examples/with-docker)
 - [docker compose](https://docs.docker.com/compose/)
