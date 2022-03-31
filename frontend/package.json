@@ -6,7 +6,7 @@
     "dev": "next dev",
     "format": "sort-package-json && prettier --ignore-unknown --write .",
     "lint": "eslint . --ext ts --ext tsx --ext js --ext jsx",
-    "prepare": "husky install",
+    "prepare": "cd .. && husky install",
     "start": "next start",
     "test": "jest",
     "test-all": "yarn lint && yarn type-check && yarn test",
