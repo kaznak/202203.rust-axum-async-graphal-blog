@@ -3,6 +3,8 @@ name: Build, Lint, Type check and Test
 on:
   push:
     branches: [main]
+    paths:
+      - 'frontend/**'
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -15,9 +17,11 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ^14.18.1
-
+          path: ./frontend
       - id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"
+        with:
+          path: ./frontend
       - uses: actions/cache@v2
         id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
         with:
@@ -27,7 +31,11 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - run: yarn
+        with:
+          path: ./frontend
       - run: yarn build
+        with:
+          path: ./frontend
 
   lint:
     runs-on: ubuntu-latest
@@ -36,9 +44,12 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ^14.18.1
+          path: ./frontend
 
       - id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"
+        with:
+          path: ./frontend
       - uses: actions/cache@v2
         id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
         with:
@@ -48,8 +59,14 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - run: yarn
+        with:
+          path: ./frontend
       - run: yarn format
+        with:
+          path: ./frontend
       - run: yarn lint
+        with:
+          path: ./frontend
 
   type-check:
     runs-on: ubuntu-latest
@@ -58,9 +75,12 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ^14.18.1
+          path: ./frontend
 
       - id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"
+        with:
+          path: ./frontend
       - uses: actions/cache@v2
         id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
         with:
@@ -70,7 +90,11 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - run: yarn
+        with:
+          path: ./frontend
       - run: yarn type-check
+        with:
+          path: ./frontend
 
   test:
     runs-on: ubuntu-latest
@@ -79,9 +103,12 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ^14.18.1
+          path: ./frontend
 
       - id: yarn-cache-dir-path
         run: echo "::set-output name=dir::$(yarn cache dir)"
+        with:
+          path: ./frontend
       - uses: actions/cache@v2
         id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
         with:
@@ -91,4 +118,8 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - run: yarn
+        with:
+          path: ./frontend
       - run: yarn test
+        with:
+          path: ./frontend
