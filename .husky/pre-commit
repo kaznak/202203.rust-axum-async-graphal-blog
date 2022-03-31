@@ -2,7 +2,7 @@
 . "$(dirname "$0")/_/husky.sh"
 
 cd backend
-rust fmt
+cargo fmt
 cd ../
 
 cd frontend
