@@ -1,22 +1,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/router'
-import Layout from 'components/layout'
 
 import { Post, blogCreate, blogDelete } from 'hooks/useBlog'
 
-interface EditorProps {
-  pageTitle: string
-  slug: string
-  title: string
-  content: string
-}
-
-export function Editor({
-  pageTitle,
-  slug = '',
-  title = '',
-  content = '',
-}: Partial<EditorProps>) {
+export function Editor({ slug = '', title = '', content = '' }: Partial<Post>) {
   const router = useRouter()
   const [input, setInput] = useState<Post>({
     slug,
@@ -33,7 +20,7 @@ export function Editor({
   }
 
   return (
-    <Layout title={pageTitle || 'Editor'}>
+    <>
       <button
         onClick={async (_) =>
           blogCreate(input).then(() => {
@@ -80,7 +67,7 @@ export function Editor({
         onChange={changeHandler}
         className="border-2"
       ></textarea>
-    </Layout>
+    </>
   )
 }
 export default Editor
