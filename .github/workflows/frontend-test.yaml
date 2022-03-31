@@ -31,6 +31,8 @@ jobs:
 
       - run: yarn
         working-directory: frontend
+        with:
+          husky: 0
       - run: yarn build
         working-directory: frontend
 
@@ -56,6 +58,8 @@ jobs:
 
       - run: yarn
         working-directory: frontend
+        with:
+          husky: 0
       - run: yarn format
         working-directory: frontend
       - run: yarn lint
@@ -83,6 +87,8 @@ jobs:
 
       - run: yarn
         working-directory: frontend
+        with:
+          husky: 0
       - run: yarn type-check
         working-directory: frontend
 
@@ -108,5 +114,7 @@ jobs:
 
       - run: yarn
         working-directory: frontend
+        with:
+          husky: 0
       - run: yarn test
         working-directory: frontend
