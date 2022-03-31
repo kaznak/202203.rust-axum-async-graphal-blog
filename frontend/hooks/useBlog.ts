@@ -98,7 +98,7 @@ export async function blogUpdate(
 }
 
 /// Delete
-export async function blogDelete(slug: number) {
+export async function blogDelete(slug: string) {
   const query = gql`
     mutation BlogDelete($slug: ID!) {
       delete(slug: $slug)

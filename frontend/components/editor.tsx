@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/router'
 import Layout from 'components/layout'
 
-import { blogCreate, blogDelete } from 'hooks/useBlog'
+import { Post, blogCreate, blogDelete } from 'hooks/useBlog'
 
 interface EditorProps {
   pageTitle: string
@@ -13,22 +13,19 @@ interface EditorProps {
 
 export function Editor({
   pageTitle,
-  slug,
-  title,
-  content,
+  slug = '',
+  title = '',
+  content = '',
 }: Partial<EditorProps>) {
   const router = useRouter()
-  const [input, setInput] = useState<Partial<EditorProps>>({
-    slug: slug ? slug : '',
-    title: title ? title : '',
-    content: content ? content : '',
+  const [input, setInput] = useState<Post>({
+    slug,
+    title,
+    content,
   })
 
-  const changeHandler = (event: { target: any }) => {
-    const target = event.target
-    const value = target.value
-    const name = target.name
-
+  const changeHandler = ({ target }) => {
+    const { value, name } = target
     setInput({
       ...input,
       [name]: value,
@@ -36,7 +33,7 @@ export function Editor({
   }
 
   return (
-    <Layout title={pageTitle ? pageTitle : 'Editor'}>
+    <Layout title={pageTitle || 'Editor'}>
       <button
         onClick={async (_) =>
           blogCreate(input).then(() => {
