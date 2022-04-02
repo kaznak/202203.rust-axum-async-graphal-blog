@@ -17,19 +17,40 @@ pub struct FileBackend {
     pub posts_dir_path: PathBuf,
 }
 
-/// Post を path で指定して読み出す。
-fn read_post_path(path: &Path) -> Result<PostData, ()> {
-    let slug = path.file_stem().unwrap().to_str().unwrap().to_string();
-    let file_opt = File::open(path);
-    if let Err(e) = file_opt {
-        log::warn!("{:?}", e);
-        return Err(());
+#[derive(PartialEq, Debug)]
+enum FileBackendSpecificErrors {
+    MissingFrontMatter,
+}
+
+impl std::fmt::Display for FileBackendSpecificErrors {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FileBackendSpecificErrors::MissingFrontMatter => write!(f, "{}", self),
+        }
+    }
+}
+
+impl std::error::Error for FileBackendSpecificErrors {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        None
     }
 
-    let mut file = file_opt.unwrap();
+    fn cause(&self) -> Option<&dyn std::error::Error> {
+        self.source()
+    }
+}
+
+/// Post を path で指定して読み出す。
+fn read_post_path(path: &Path) -> Result<PostData, Box<dyn std::error::Error>> {
+    let slug = path.file_stem().unwrap().to_str().unwrap().to_string();
+    let mut file = File::open(path)?;
+
     let mut cont = String::new();
-    let _n = file.read_to_string(&mut cont).unwrap();
-    let (front_matter, content) = serde_frontmatter::deserialize::<PostFrontMatter>(&cont).unwrap();
+    let _n = file.read_to_string(&mut cont)?;
+    let (front_matter, content) = match serde_frontmatter::deserialize::<PostFrontMatter>(&cont) {
+        Ok(v) => v,
+        Err(_) => return Err(Box::new(FileBackendSpecificErrors::MissingFrontMatter)),
+    };
     let PostFrontMatter { title } = front_matter;
     let postdata = PostData {
         title,
@@ -73,80 +94,51 @@ impl FileBackend {
 
 impl Backend for FileBackend {
     /// Create
-    fn create_post(&self, postdata: &PostData) -> Result<PostData, ()> {
+    fn create_post(&self, postdata: &PostData) -> Result<PostData, Box<dyn std::error::Error>> {
         let (path, markdown) = build_write_data(self, postdata);
         // write
-        match File::create(path) {
-            Ok(mut file) => {
-                let _n = file.write(markdown.as_bytes());
-                let postdata = postdata.clone();
-                log::trace!("{:?}", postdata);
-                Ok(postdata)
-            }
-            Err(e) => {
-                log::warn!("{:?}", e);
-                Err(())
-            }
-        }
+        let mut file = File::create(path)?;
+        let _n = file.write(markdown.as_bytes());
+        let postdata = postdata.clone();
+        log::trace!("{:?}", postdata);
+        Ok(postdata)
     }
     /// Read
-    fn read_post(&self, slug: &str) -> Result<PostData, ()> {
+    fn read_post(&self, slug: &str) -> Result<PostData, Box<dyn std::error::Error>> {
         let path = self.slug_to_path(slug);
         read_post_path(&path)
     }
     /// List
-    fn list_posts(&self) -> Result<Vec<PostData>, ()> {
+    fn list_posts(&self) -> Result<Vec<PostData>, Box<dyn std::error::Error>> {
         let mut post_vec: Vec<PostData> = Vec::new();
         let FileBackend { posts_dir_path } = self;
-        match std::fs::read_dir(posts_dir_path) {
-            Err(e) => {
-                log::warn!("{:?}", e);
-                return Err(());
-            }
-            Ok(paths) => {
-                // log::trace!("{:?}", paths);
-                for direntry_result in paths {
-                    let path = direntry_result.unwrap().path();
-                    let postdata = read_post_path(&path).unwrap();
-                    post_vec.push(postdata);
-                }
-            }
-        };
-        log::trace!("{:?}", post_vec);
+        let paths = std::fs::read_dir(posts_dir_path)?;
+        for direntry_result in paths {
+            let path = direntry_result.unwrap().path();
+            let postdata = read_post_path(&path).unwrap();
+            post_vec.push(postdata);
+        }
         Ok(post_vec)
     }
     /// Update
-    fn update_post(&self, postdata: &PostData) -> Result<PostData, ()> {
+    fn update_post(&self, postdata: &PostData) -> Result<PostData, Box<dyn std::error::Error>> {
         let (path, markdown) = build_write_data(self, postdata);
         // write
-        match OpenOptions::new()
+        let mut file = OpenOptions::new()
             .write(true)
             .create(false)
             .truncate(true)
-            .open(path)
-        {
-            Ok(mut file) => {
-                let _n = file.write(markdown.as_bytes());
-                let postdata = postdata.clone();
-                log::trace!("{:?}", postdata);
-                Ok(postdata)
-            }
-            Err(e) => {
-                log::warn!("{:?}", e);
-                Err(())
-            }
-        }
+            .open(path)?;
+        let _n = file.write(markdown.as_bytes());
+        let postdata = postdata.clone();
+        log::trace!("{:?}", postdata);
+        Ok(postdata)
     }
     /// Delete
-    fn delete_post(&self, slug: &str) -> Result<(), ()> {
+    fn delete_post(&self, slug: &str) -> Result<(), Box<dyn std::error::Error>> {
         let path = self.slug_to_path(&slug);
-        match std::fs::remove_file(path) {
-            Ok(()) => Ok(()),
-            Err(e) => {
-                log::warn!("{:?}", e);
-                Err(())
-            }
-        }
+        let ret = std::fs::remove_file(path)?;
+        Ok(ret)
     }
 }
 
