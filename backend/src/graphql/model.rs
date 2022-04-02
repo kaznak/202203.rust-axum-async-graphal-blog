@@ -1,12 +1,12 @@
 use crate::backend::{file::FileBackend, post::*};
-use async_graphql::{Context, EmptySubscription, InputObject, Object, Schema, SimpleObject, ID};
+use async_graphql::{Context, EmptySubscription, InputObject, Object, Schema, SimpleObject};
 
 pub type GraphQLSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
 
 #[derive(Clone, SimpleObject, InputObject)]
 #[graphql(input_name = "PostInput")]
 pub struct Post {
-    #[graphql(validator(min_length = 4, max_length = 1024, regex = r"^[a-z0-9]+$"))]
+    #[graphql(validator(min_length = 4, max_length = 1024, regex = r"^[a-z0-9-_]+$"))]
     slug: String,
     title: String,
     content: String,
@@ -59,7 +59,8 @@ impl From<&PostData> for Post {
 
 #[derive(Clone, InputObject)]
 pub struct PostOpt {
-    slug: ID,
+    #[graphql(validator(min_length = 4, max_length = 1024, regex = r"^[a-z0-9-_]+$"))]
+    slug: String,
     title: Option<String>,
     content: Option<String>,
 }
@@ -94,7 +95,7 @@ impl QueryRoot {
     async fn post<'ctx>(
         &self,
         ctx: &Context<'ctx>,
-        #[graphql(validator(min_length = 4, max_length = 1024, regex = r"^[a-z0-9]+$"))]
+        #[graphql(validator(min_length = 4, max_length = 1024, regex = r"^[a-z0-9-_]+$"))]
         slug: String,
     ) -> Result<Post, String> {
         let backend = ctx.data::<Storage>().unwrap();
@@ -145,7 +146,7 @@ impl MutationRoot {
     async fn delete<'ctx>(
         &self,
         ctx: &Context<'ctx>,
-        #[graphql(validator(min_length = 4, max_length = 1024, regex = r"^[a-z0-9]+$"))]
+        #[graphql(validator(min_length = 4, max_length = 1024, regex = r"^[a-z0-9-_]+$"))]
         slug: String,
     ) -> Result<String, String> {
         let backend = ctx.data::<Storage>().unwrap();
