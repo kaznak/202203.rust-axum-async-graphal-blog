@@ -6,7 +6,8 @@ pub type GraphQLSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
 #[derive(Clone, SimpleObject, InputObject)]
 #[graphql(input_name = "PostInput")]
 pub struct Post {
-    slug: ID,
+    #[graphql(validator(min_length = 4, max_length = 1024, regex = r"^[a-z0-9]+$"))]
+    slug: String,
     title: String,
     content: String,
 }
@@ -34,7 +35,7 @@ impl From<PostData> for Post {
             content,
         } = postdata;
         Post {
-            slug: ID::from(slug),
+            slug,
             title,
             content,
         }
@@ -49,7 +50,7 @@ impl From<&PostData> for Post {
             content,
         } = postdata;
         Post {
-            slug: ID::from(slug),
+            slug: slug.clone(),
             title: title.clone(),
             content: content.clone(),
         }
@@ -90,9 +91,14 @@ pub struct QueryRoot;
 
 #[Object]
 impl QueryRoot {
-    async fn post<'ctx>(&self, ctx: &Context<'ctx>, slug: String) -> Result<Post, String> {
+    async fn post<'ctx>(
+        &self,
+        ctx: &Context<'ctx>,
+        #[graphql(validator(min_length = 4, max_length = 1024, regex = r"^[a-z0-9]+$"))]
+        slug: String,
+    ) -> Result<Post, String> {
         let backend = ctx.data::<Storage>().unwrap();
-        match backend.read_post(&slug) {
+        match backend.read_post(&slug.as_str()) {
             Ok(p) => Ok(Post::from(p)),
             Err(_) => Err("error!".to_string()),
         }
@@ -136,7 +142,12 @@ impl MutationRoot {
             Err(_) => Err("error!".to_string()),
         }
     }
-    async fn delete<'ctx>(&self, ctx: &Context<'ctx>, slug: ID) -> Result<ID, String> {
+    async fn delete<'ctx>(
+        &self,
+        ctx: &Context<'ctx>,
+        #[graphql(validator(min_length = 4, max_length = 1024, regex = r"^[a-z0-9]+$"))]
+        slug: String,
+    ) -> Result<String, String> {
         let backend = ctx.data::<Storage>().unwrap();
         let slug_str = String::from(slug.clone());
         match backend.delete_post(&slug_str) {
