@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::backend::{file::FileBackend, post::*};
 use async_graphql::{Context, EmptySubscription, InputObject, Object, Schema, SimpleObject};
 
@@ -57,7 +59,8 @@ impl From<&PostData> for Post {
     }
 }
 
-#[derive(Clone, InputObject)]
+#[derive(Clone, SimpleObject, InputObject)]
+#[graphql(input_name = "PostOptInput")]
 pub struct PostOpt {
     #[graphql(validator(min_length = 4, max_length = 1024, regex = r"^[a-z0-9-_]+$"))]
     slug: String,
@@ -83,6 +86,21 @@ impl PostOpt {
             title,
             content,
         })
+    }
+}
+
+impl Into<PostOpt> for PostData {
+    fn into(self) -> PostOpt {
+        let PostData {
+            slug,
+            title,
+            content,
+        } = self;
+        PostOpt {
+            slug,
+            title: Some(title),
+            content: Some(content),
+        }
     }
 }
 
@@ -119,18 +137,34 @@ impl QueryRoot {
             }
         }
     }
-    async fn list<'ctx>(&self, ctx: &Context<'ctx>) -> Result<Vec<Post>, BlogError> {
+    async fn list<'ctx>(&self, ctx: &Context<'ctx>) -> Result<Vec<PostOpt>, BlogError> {
         let backend = ctx.data::<Storage>().unwrap();
-        let list_result = backend.list_posts();
-        match list_result {
-            Ok(ss) => {
-                let posts = ss
-                    .iter()
-                    .map(|slug| Post::from(backend.read_post(&slug).unwrap()))
-                    .collect();
-                Ok(posts)
-            }
-            Err(_) => Err(BlogError::InternalServerError),
+        let slug_list = match backend.list_posts() {
+            Ok(v) => v,
+            Err(_) => return Err(BlogError::InternalServerError),
+        };
+
+        let mut fields = ctx
+            .field()
+            .selection_set()
+            .map(|field| field.name())
+            .collect::<HashSet<_>>();
+
+        fields.remove("slug");
+        if 0 < fields.capacity() {
+            return Ok(slug_list
+                .iter()
+                .map(|slug| PostOpt {
+                    slug: slug.clone(),
+                    title: None,
+                    content: None,
+                })
+                .collect());
+        } else {
+            return Ok(slug_list
+                .iter()
+                .map(|slug| backend.read_post(&slug).unwrap().into())
+                .collect());
         }
     }
 }
