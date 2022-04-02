@@ -9,6 +9,7 @@
         "postdata",
         "readdata",
         "retdata",
+        "sfmerror",
         "updatedata"
     ]
 }
