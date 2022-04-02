@@ -1,4 +1,5 @@
 use crate::backend::post::{Backend, PostData, Slug};
+use crate::frontmatter;
 use serde::{Deserialize, Serialize};
 use std::{
     fs::{File, OpenOptions},
@@ -7,9 +8,9 @@ use std::{
 };
 
 /// Post の front matter のデータ
-#[derive(Deserialize, Serialize, PartialEq, Debug)]
-struct PostFrontMatter {
-    pub title: String,
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
+struct PostFrontMatter<'a> {
+    pub title: &'a str,
 }
 
 /// Backend on file system
@@ -41,37 +42,34 @@ impl std::error::Error for FileBackendSpecificErrors {
 }
 
 /// Post を path で指定して読み出す。
-fn read_post_path(path: &Path) -> Result<PostData, Box<dyn std::error::Error>> {
-    let slug = path.file_stem().unwrap().to_str().unwrap().to_string();
+fn read_post_path<'a>(path: &'a Path) -> Result<PostData<'a>, Box<dyn std::error::Error>> {
+    let slug = path.file_stem().unwrap().to_str().unwrap();
     let mut file = File::open(path)?;
 
     let mut cont = String::new();
     let _n = file.read_to_string(&mut cont)?;
-    let (front_matter, content) = match serde_frontmatter::deserialize::<PostFrontMatter>(&cont) {
-        Ok(v) => v,
-        Err(_) => return Err(Box::new(FileBackendSpecificErrors::MissingFrontMatter)),
-    };
-    let PostFrontMatter { title } = front_matter;
+    let (PostFrontMatter { title }, content) =
+        match frontmatter::deserialize::<PostFrontMatter<'a>>(&cont) {
+            Ok(v) => v,
+            Err(_) => return Err(Box::new(FileBackendSpecificErrors::MissingFrontMatter)),
+        };
     let postdata = PostData {
         title,
         slug,
-        content: content.trim().to_string(),
+        content: content.trim(),
     };
-    log::trace!("{:?}", postdata);
     Ok(postdata)
 }
 
 /// PostData からファイルシステム操作のためのデータを構築する
-fn build_write_data(filebackend: &FileBackend, postdata: &PostData) -> (PathBuf, String) {
+fn build_write_data<'a>(filebackend: &'a FileBackend, postdata: &'a PostData) -> (PathBuf, String) {
     // make data
     let PostData {
         title,
         slug,
         content,
-    } = postdata;
-    let front_matter = PostFrontMatter {
-        title: title.clone(),
-    };
+    } = *postdata;
+    let front_matter = PostFrontMatter { title };
     let markdown = serde_frontmatter::serialize(front_matter, content.trim()).unwrap();
     let path = filebackend.slug_to_path(slug);
     (path, markdown)

@@ -5,3 +5,4 @@ pub mod backend {
 pub mod graphql {
     pub mod model;
 }
+pub mod frontmatter;
