@@ -70,12 +70,12 @@ export async function blogCreate(post: Post) {
     post,
   }
 
-  return request(API_ENDPOINT, query, variables)
+  return request<BlogCreate>(API_ENDPOINT, query, variables)
 }
 
 /// Update
 export type BlogUpdate = {
-  update: Partial<Post>
+  update: Post
 }
 
 export async function blogUpdate(
@@ -94,10 +94,14 @@ export async function blogUpdate(
     post,
   }
 
-  return request(API_ENDPOINT, query, variables)
+  return request<BlogUpdate>(API_ENDPOINT, query, variables)
 }
 
 /// Delete
+export type BlogDelete = {
+  delete: Post['slug']
+}
+
 export async function blogDelete(slug: string) {
   const query = gql`
     mutation BlogDelete($slug: ID!) {
@@ -108,5 +112,5 @@ export async function blogDelete(slug: string) {
     slug,
   }
 
-  return request(API_ENDPOINT, query, variables)
+  return request<BlogDelete>(API_ENDPOINT, query, variables)
 }
