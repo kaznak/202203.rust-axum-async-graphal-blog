@@ -1,7 +1,9 @@
+type Slug = String;
+
 /// Post のデータ
 #[derive(Clone, PartialEq, Debug)]
 pub struct PostData {
-    pub slug: String,
+    pub slug: Slug,
     pub title: String,
     pub content: String,
 }
@@ -13,7 +15,7 @@ pub trait Backend {
     /// Read
     fn read_post(&self, slug: &str) -> Result<PostData, Box<dyn std::error::Error>>;
     /// List
-    fn list_posts(&self) -> Result<Vec<PostData>, Box<dyn std::error::Error>>;
+    fn list_posts(&self) -> Result<Vec<Slug>, Box<dyn std::error::Error>>;
     /// Update
     fn update_post(&self, postdata: &PostData) -> Result<PostData, Box<dyn std::error::Error>>;
     /// Delete
