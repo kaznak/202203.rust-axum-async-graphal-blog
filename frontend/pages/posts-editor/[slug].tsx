@@ -10,7 +10,13 @@ export function Post() {
   const { data, error } = useBlogPost(slug as string)
 
   if (error) {
-    return <div>failed to load</div>
+    if (
+      error.response.errors.some(({ message }) => 'Post Not Found' == message)
+    ) {
+      router.push('/404')
+    } else {
+      return <div>failed to load</div>
+    }
   }
   if (!data) {
     return <div>loading...</div>

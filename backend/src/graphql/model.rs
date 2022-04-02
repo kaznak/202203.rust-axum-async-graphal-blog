@@ -150,8 +150,17 @@ impl QueryRoot {
             .map(|field| field.name())
             .collect::<HashSet<_>>();
 
+        log::info!("{:?}", fields);
+
         fields.remove("slug");
         if 0 < fields.capacity() {
+            log::trace!("list: fetch contents");
+            return Ok(slug_list
+                .iter()
+                .map(|slug| backend.read_post(&slug).unwrap().into())
+                .collect());
+        } else {
+            log::trace!("list: only list");
             return Ok(slug_list
                 .iter()
                 .map(|slug| PostOpt {
@@ -159,11 +168,6 @@ impl QueryRoot {
                     title: None,
                     content: None,
                 })
-                .collect());
-        } else {
-            return Ok(slug_list
-                .iter()
-                .map(|slug| backend.read_post(&slug).unwrap().into())
                 .collect());
         }
     }
