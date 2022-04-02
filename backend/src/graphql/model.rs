@@ -86,6 +86,14 @@ impl PostOpt {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum BlogError {
+    #[error("Post Not Found")]
+    NotFound,
+    #[error("Internal Server Error")]
+    InternalServerError,
+}
+
 pub type Storage = FileBackend;
 
 pub struct QueryRoot;
@@ -97,16 +105,24 @@ impl QueryRoot {
         ctx: &Context<'ctx>,
         #[graphql(validator(min_length = 4, max_length = 1024, regex = r"^[a-z0-9-_]+$"))]
         slug: String,
-    ) -> Result<Post, String> {
+    ) -> Result<Post, BlogError> {
         let backend = ctx.data::<Storage>().unwrap();
         match backend.read_post(&slug.as_str()) {
             Ok(p) => Ok(Post::from(p)),
-            Err(_) => Err("error!".to_string()),
+            Err(e) => {
+                if let Some(e) = e.downcast_ref::<std::io::Error>() {
+                    if std::io::ErrorKind::NotFound == e.kind() {
+                        return Err(BlogError::NotFound);
+                    }
+                }
+                Err(BlogError::InternalServerError)
+            }
         }
     }
-    async fn list<'ctx>(&self, ctx: &Context<'ctx>) -> Result<Vec<Post>, String> {
+    async fn list<'ctx>(&self, ctx: &Context<'ctx>) -> Result<Vec<Post>, BlogError> {
         let backend = ctx.data::<Storage>().unwrap();
-        match backend.list_posts() {
+        let list_result = backend.list_posts();
+        match list_result {
             Ok(ss) => {
                 let posts = ss
                     .iter()
@@ -114,7 +130,7 @@ impl QueryRoot {
                     .collect();
                 Ok(posts)
             }
-            Err(_) => Err("error!".to_string()),
+            Err(_) => Err(BlogError::InternalServerError),
         }
     }
 }
@@ -123,24 +139,24 @@ pub struct MutationRoot;
 
 #[Object]
 impl MutationRoot {
-    async fn create<'ctx>(&self, ctx: &Context<'ctx>, post: Post) -> Result<Post, String> {
+    async fn create<'ctx>(&self, ctx: &Context<'ctx>, post: Post) -> Result<Post, BlogError> {
         let backend = ctx.data::<Storage>().unwrap();
         let postdata = post.into();
         match backend.create_post(&postdata) {
             Ok(p) => Ok(Post::from(p)),
-            Err(_) => Err("error!".to_string()),
+            Err(_) => Err(BlogError::InternalServerError),
         }
     }
-    async fn update<'ctx>(&self, ctx: &Context<'ctx>, postopt: PostOpt) -> Result<Post, String> {
+    async fn update<'ctx>(&self, ctx: &Context<'ctx>, postopt: PostOpt) -> Result<Post, BlogError> {
         let backend = ctx.data::<Storage>().unwrap();
         let res_read = postopt.to_postdata(backend);
         if let Err(_) = res_read {
-            return Err("error!".to_string());
+            return Err(BlogError::InternalServerError);
         }
         let res_create = backend.create_post(&res_read.unwrap());
         match res_create {
             Ok(p) => Ok(Post::from(p)),
-            Err(_) => Err("error!".to_string()),
+            Err(_) => Err(BlogError::InternalServerError),
         }
     }
     async fn delete<'ctx>(
@@ -148,12 +164,12 @@ impl MutationRoot {
         ctx: &Context<'ctx>,
         #[graphql(validator(min_length = 4, max_length = 1024, regex = r"^[a-z0-9-_]+$"))]
         slug: String,
-    ) -> Result<String, String> {
+    ) -> Result<String, BlogError> {
         let backend = ctx.data::<Storage>().unwrap();
         let slug_str = String::from(slug.clone());
         match backend.delete_post(&slug_str) {
             Ok(_) => Ok(slug),
-            Err(_) => Err("error!".to_string()),
+            Err(_) => Err(BlogError::InternalServerError),
         }
     }
 }
