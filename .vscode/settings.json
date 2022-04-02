@@ -7,8 +7,11 @@
         "finiret",
         "hoge",
         "postdata",
+        "postopt",
         "readdata",
         "retdata",
+        "sfmerror",
+        "thiserror",
         "updatedata"
     ]
 }
