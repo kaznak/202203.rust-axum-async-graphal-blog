@@ -104,7 +104,13 @@ impl QueryRoot {
     async fn list<'ctx>(&self, ctx: &Context<'ctx>) -> Result<Vec<Post>, String> {
         let backend = ctx.data::<Storage>().unwrap();
         match backend.list_posts() {
-            Ok(l) => Ok(l.iter().map(|pd| Post::from(pd)).collect()),
+            Ok(ss) => {
+                let posts = ss
+                    .iter()
+                    .map(|slug| Post::from(backend.read_post(&slug).unwrap()))
+                    .collect();
+                Ok(posts)
+            }
             Err(_) => Err("error!".to_string()),
         }
     }

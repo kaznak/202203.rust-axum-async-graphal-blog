@@ -1,4 +1,4 @@
-use crate::backend::post::{Backend, PostData};
+use crate::backend::post::{Backend, PostData, Slug};
 use serde::{Deserialize, Serialize};
 use std::{
     fs::{File, OpenOptions},
@@ -109,16 +109,15 @@ impl Backend for FileBackend {
         read_post_path(&path)
     }
     /// List
-    fn list_posts(&self) -> Result<Vec<PostData>, Box<dyn std::error::Error>> {
-        let mut post_vec: Vec<PostData> = Vec::new();
+    fn list_posts(&self) -> Result<Vec<Slug>, Box<dyn std::error::Error>> {
+        let mut slug_vec: Vec<Slug> = Vec::new();
         let FileBackend { posts_dir_path } = self;
         let paths = std::fs::read_dir(posts_dir_path)?;
         for direntry_result in paths {
-            let path = direntry_result.unwrap().path();
-            let postdata = read_post_path(&path).unwrap();
-            post_vec.push(postdata);
+            let path = direntry_result?.path();
+            slug_vec.push(path.file_stem().unwrap().to_str().unwrap().to_string());
         }
-        Ok(post_vec)
+        Ok(slug_vec)
     }
     /// Update
     fn update_post(&self, postdata: &PostData) -> Result<PostData, Box<dyn std::error::Error>> {
@@ -192,11 +191,10 @@ mod tests {
     fn list_posts_success() {
         let _ = pretty_env_logger::try_init();
         let filebackend = FileBackend::new("./example/posts");
-        let post_vec = filebackend.list_posts().unwrap();
-        assert!(post_vec[0].slug.eq("sample1"));
-        assert!(post_vec[0].title.eq("sample 1"));
-        assert!(post_vec[1].slug.eq("sample2"));
-        assert!(post_vec[1].title.eq("sample 2"));
+        let slug_vec = filebackend.list_posts().unwrap();
+        eprintln!("{:?}", slug_vec);
+        assert!(slug_vec[0].eq("sample1"));
+        assert!(slug_vec[1].eq("sample2"));
     }
     #[test]
     fn list_posts_not_exists() {
