@@ -17,27 +17,10 @@ pub struct FileBackend {
     pub posts_dir_path: PathBuf,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, thiserror::Error)]
 enum FileBackendSpecificErrors {
+    #[error("MissingFrontMatter")]
     MissingFrontMatter,
-}
-
-impl std::fmt::Display for FileBackendSpecificErrors {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            FileBackendSpecificErrors::MissingFrontMatter => write!(f, "{}", self),
-        }
-    }
-}
-
-impl std::error::Error for FileBackendSpecificErrors {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        None
-    }
-
-    fn cause(&self) -> Option<&dyn std::error::Error> {
-        self.source()
-    }
 }
 
 /// Post を path で指定して読み出す。
