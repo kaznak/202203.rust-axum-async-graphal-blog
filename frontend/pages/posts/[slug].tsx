@@ -1,5 +1,6 @@
 import { useRouter } from 'next/router'
 import { useBlogPost } from 'hooks/useBlog'
+import ReactMarkdown from 'react-markdown'
 
 import Layout from 'components/layout'
 
@@ -16,7 +17,7 @@ export function Post() {
   }
   return (
     <Layout title={data.post.title} editSlug={slug as string}>
-      {data.post.content}
+      <ReactMarkdown>{data.post.content}</ReactMarkdown>
     </Layout>
   )
 }
