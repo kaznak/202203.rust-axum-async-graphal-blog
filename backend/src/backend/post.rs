@@ -1,4 +1,4 @@
-type Slug = String;
+pub type Slug = String;
 
 /// Post のデータ
 #[derive(Clone, PartialEq, Debug)]
