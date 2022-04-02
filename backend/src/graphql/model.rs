@@ -64,16 +64,12 @@ pub struct PostOpt {
 }
 
 impl PostOpt {
-    fn to_postdata(&self, backend: &dyn Backend) -> Result<PostData, ()> {
-        let res = backend.read_post(&self.slug.to_string());
-        if let Err(_) = res {
-            return Err(());
-        }
+    fn to_postdata(&self, backend: &dyn Backend) -> Result<PostData, Box<dyn std::error::Error>> {
         let PostData {
             slug,
             mut title,
             mut content,
-        } = res.unwrap();
+        } = backend.read_post(&self.slug.to_string())?;
         if let Some(v) = &self.title {
             title = v.to_string();
         }
