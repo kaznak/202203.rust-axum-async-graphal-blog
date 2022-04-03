@@ -46,8 +46,9 @@ export function useBlogPost(slug?: string) {
     slug,
   }
 
-  return useSWR<BlogPost>(slug ? query : null, (query) =>
-    request(API_ENDPOINT, query, variables)
+  return useSWR<BlogPost>(
+    slug ? { query, variables } : null,
+    ({ query, variables }) => request(API_ENDPOINT, query, variables)
   )
 }
 
