@@ -1,5 +1,6 @@
 import { request, gql } from 'graphql-request'
 import useSWR from 'swr'
+import { NextRouter } from 'next/router'
 
 import { API_ENDPOINT } from 'configs/app'
 
@@ -7,6 +8,18 @@ export type Post = {
   slug: string
   title: string
   content: string
+}
+
+export function handleBlogError(router: NextRouter, error: any) {
+  if (error) {
+    if (
+      error.response?.errors.some(({ message }) => 'Post Not Found' == message)
+    ) {
+      router.push('/404')
+    } else {
+      router.push('/500')
+    }
+  }
 }
 
 /// List
