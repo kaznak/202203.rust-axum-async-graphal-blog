@@ -1,5 +1,6 @@
 import { request, gql } from 'graphql-request'
 import useSWR from 'swr'
+import { NextRouter } from 'next/router'
 
 import { API_ENDPOINT } from 'configs/app'
 
@@ -9,108 +10,122 @@ export type Post = {
   content: string
 }
 
+export function handleBlogError(router: NextRouter, error: any) {
+  if (error) {
+    if (
+      error.response?.errors.some(({ message }) => 'Post Not Found' == message)
+    ) {
+      router.push('/404')
+    } else {
+      router.push('/500')
+    }
+  }
+}
+
+const fetcher = <T>({ query, variables }) =>
+  request<T>(API_ENDPOINT, query, variables)
+
 /// List
 export type BlogPostList = {
   list: Array<Pick<Post, 'slug' | 'title'>>
 }
-
-export function useBlogPostList() {
-  const query = gql`
-    query List {
-      list {
-        slug
-        title
-      }
+const listRequest = gql`
+  query List {
+    list {
+      slug
+      title
     }
-  `
-
-  return useSWR<BlogPostList>(query, (query) => request(API_ENDPOINT, query))
+  }
+`
+export const useBlogList = () => {
+  const key = { query: listRequest }
+  return useSWR<BlogPostList>(key, fetcher)
 }
 
 /// Post
 export type BlogPost = {
   post: Pick<Post, 'title' | 'content'>
 }
-
-export function useBlogPost(slug?: string) {
-  const query = gql`
-    query Post($slug: String!) {
-      post(slug: $slug) {
-        title
-        content
-      }
+const postRequest = gql`
+  query Post($slug: String!) {
+    post(slug: $slug) {
+      title
+      content
     }
-  `
-
-  const variables = {
-    slug,
   }
-
-  return useSWR<BlogPost>(slug ? query : null, (query) =>
-    request(API_ENDPOINT, query, variables)
-  )
+`
+export const useBlogPost = (slug?: string) => {
+  const key = slug ? { query: postRequest, variables: { slug } } : null
+  return useSWR<BlogPost>(key, fetcher)
 }
 
 /// Create
 export type BlogCreate = {
   create: Post
 }
-
-export async function blogCreate(post: Post) {
-  const query = gql`
-    mutation BlogCreate($post: PostInput!) {
-      create(post: $post) {
-        slug
-        title
-        content
-      }
+const createRequest = gql`
+  mutation BlogCreate($post: PostInput!) {
+    create(post: $post) {
+      slug
+      title
+      content
     }
-  `
-  const variables = {
-    post,
   }
+`
+export const useBlogCreate = (post: Post, mutate?) => {
+  const { slug } = post
 
-  return request<BlogCreate>(API_ENDPOINT, query, variables)
+  const key = { query: createRequest, variables: { post } }
+  const ret = fetcher<BlogCreate>(key)
+  if (mutate) {
+    mutate({ query: listRequest })
+    mutate({ query: postRequest, variables: { slug } })
+  }
+  return ret
 }
-
 /// Update
 export type BlogUpdate = {
   update: Post
 }
-
-export async function blogUpdate(
-  post: Pick<Post, 'slug'> & Partial<Omit<Post, 'slug'>>
-) {
-  const query = gql`
-    mutation BlogUpdate($post: PostOpt!) {
-      update(post: $post) {
-        slug
-        title
-        content
-      }
+const updateRequest = gql`
+  mutation BlogUpdate($post: PostOpt!) {
+    update(post: $post) {
+      slug
+      title
+      content
     }
-  `
-  const variables = {
-    post,
   }
+`
+export const useBlogUpdate = (
+  post: Pick<Post, 'slug'> & Partial<Omit<Post, 'slug'>>,
+  mutate?
+) => {
+  const { slug } = post
 
-  return request<BlogUpdate>(API_ENDPOINT, query, variables)
+  const key = { query: updateRequest, variables: { post } }
+  const ret = fetcher<BlogUpdate>(key)
+  if (mutate) {
+    mutate({ query: listRequest })
+    mutate({ query: postRequest, variables: { slug } })
+  }
+  return ret
 }
 
 /// Delete
 export type BlogDelete = {
   delete: Post['slug']
 }
-
-export async function blogDelete(slug: string) {
-  const query = gql`
-    mutation BlogDelete($slug: ID!) {
-      delete(slug: $slug)
-    }
-  `
-  const variables = {
-    slug,
+const deleteRequest = gql`
+  mutation BlogDelete($slug: ID!) {
+    delete(slug: $slug)
   }
-
-  return request<BlogDelete>(API_ENDPOINT, query, variables)
+`
+export const useBlogDelete = (slug: string, mutate?) => {
+  const key = { query: deleteRequest, variables: { slug } }
+  const ret = fetcher<BlogDelete>(key)
+  if (mutate) {
+    mutate({ query: listRequest })
+    mutate({ query: postRequest, variables: { slug } })
+  }
+  return ret
 }

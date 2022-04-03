@@ -1,4 +1,4 @@
-pub mod backend {
+pub mod datastore {
     pub mod file;
     pub mod post;
 }

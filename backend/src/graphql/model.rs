@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::backend::{file::FileBackend, post::*};
+use crate::datastore::{file::FileDataStore, post::*};
 use async_graphql::{Context, EmptySubscription, InputObject, Object, Schema, SimpleObject};
 
 pub type GraphQLSchema = Schema<QueryRoot, MutationRoot, EmptySubscription>;
@@ -69,12 +69,15 @@ pub struct PostOpt {
 }
 
 impl PostOpt {
-    fn to_postdata(&self, backend: &dyn Backend) -> Result<PostData, Box<dyn std::error::Error>> {
+    fn to_postdata(
+        &self,
+        datastore: &dyn DataStore,
+    ) -> Result<PostData, Box<dyn std::error::Error>> {
         let PostData {
             slug,
             mut title,
             mut content,
-        } = backend.read_post(&self.slug.to_string())?;
+        } = datastore.read_post(&self.slug.to_string())?;
         if let Some(v) = &self.title {
             title = v.to_string();
         }
@@ -112,7 +115,7 @@ pub enum BlogError {
     InternalServerError,
 }
 
-pub type Storage = FileBackend;
+pub type Storage = FileDataStore;
 
 pub struct QueryRoot;
 
@@ -124,8 +127,8 @@ impl QueryRoot {
         #[graphql(validator(min_length = 4, max_length = 1024, regex = r"^[a-z0-9-_]+$"))]
         slug: String,
     ) -> Result<Post, BlogError> {
-        let backend = ctx.data::<Storage>().unwrap();
-        match backend.read_post(&slug.as_str()) {
+        let datastore = ctx.data::<Storage>().unwrap();
+        match datastore.read_post(&slug.as_str()) {
             Ok(p) => Ok(Post::from(p)),
             Err(e) => {
                 if let Some(e) = e.downcast_ref::<std::io::Error>() {
@@ -138,8 +141,8 @@ impl QueryRoot {
         }
     }
     async fn list<'ctx>(&self, ctx: &Context<'ctx>) -> Result<Vec<PostOpt>, BlogError> {
-        let backend = ctx.data::<Storage>().unwrap();
-        let slug_list = match backend.list_posts() {
+        let datastore = ctx.data::<Storage>().unwrap();
+        let slug_list = match datastore.list_posts() {
             Ok(v) => v,
             Err(_) => return Err(BlogError::InternalServerError),
         };
@@ -150,14 +153,12 @@ impl QueryRoot {
             .map(|field| field.name())
             .collect::<HashSet<_>>();
 
-        log::info!("{:?}", fields);
-
         fields.remove("slug");
         if 0 < fields.capacity() {
             log::trace!("list: fetch contents");
             return Ok(slug_list
                 .iter()
-                .map(|slug| backend.read_post(&slug).unwrap().into())
+                .map(|slug| datastore.read_post(&slug).unwrap().into())
                 .collect());
         } else {
             log::trace!("list: only list");
@@ -178,20 +179,20 @@ pub struct MutationRoot;
 #[Object]
 impl MutationRoot {
     async fn create<'ctx>(&self, ctx: &Context<'ctx>, post: Post) -> Result<Post, BlogError> {
-        let backend = ctx.data::<Storage>().unwrap();
+        let datastore = ctx.data::<Storage>().unwrap();
         let postdata = post.into();
-        match backend.create_post(&postdata) {
+        match datastore.create_post(&postdata) {
             Ok(p) => Ok(Post::from(p)),
             Err(_) => Err(BlogError::InternalServerError),
         }
     }
     async fn update<'ctx>(&self, ctx: &Context<'ctx>, postopt: PostOpt) -> Result<Post, BlogError> {
-        let backend = ctx.data::<Storage>().unwrap();
-        let res_read = postopt.to_postdata(backend);
+        let datastore = ctx.data::<Storage>().unwrap();
+        let res_read = postopt.to_postdata(datastore);
         if let Err(_) = res_read {
             return Err(BlogError::InternalServerError);
         }
-        let res_create = backend.create_post(&res_read.unwrap());
+        let res_create = datastore.create_post(&res_read.unwrap());
         match res_create {
             Ok(p) => Ok(Post::from(p)),
             Err(_) => Err(BlogError::InternalServerError),
@@ -203,9 +204,9 @@ impl MutationRoot {
         #[graphql(validator(min_length = 4, max_length = 1024, regex = r"^[a-z0-9-_]+$"))]
         slug: String,
     ) -> Result<String, BlogError> {
-        let backend = ctx.data::<Storage>().unwrap();
+        let datastore = ctx.data::<Storage>().unwrap();
         let slug_str = String::from(slug.clone());
-        match backend.delete_post(&slug_str) {
+        match datastore.delete_post(&slug_str) {
             Ok(_) => Ok(slug),
             Err(_) => Err(BlogError::InternalServerError),
         }

@@ -1,4 +1,4 @@
-use crate::backend::post::{Backend, PostData, Slug};
+use crate::datastore::post::{DataStore, PostData, Slug};
 use serde::{Deserialize, Serialize};
 use std::{
     fs::{File, OpenOptions},
@@ -12,13 +12,13 @@ struct PostFrontMatter {
     pub title: String,
 }
 
-/// Backend on file system
-pub struct FileBackend {
+/// datastore on file system
+pub struct FileDataStore {
     pub posts_dir_path: PathBuf,
 }
 
 #[derive(PartialEq, Debug, thiserror::Error)]
-enum FileBackendSpecificErrors {
+enum FileDataStoreErrors {
     #[error("MissingFrontMatter")]
     MissingFrontMatter,
 }
@@ -32,7 +32,7 @@ fn read_post_path(path: &Path) -> Result<PostData, Box<dyn std::error::Error>> {
     let _n = file.read_to_string(&mut cont)?;
     let (front_matter, content) = match serde_frontmatter::deserialize::<PostFrontMatter>(&cont) {
         Ok(v) => v,
-        Err(_) => return Err(Box::new(FileBackendSpecificErrors::MissingFrontMatter)),
+        Err(_) => return Err(Box::new(FileDataStoreErrors::MissingFrontMatter)),
     };
     let PostFrontMatter { title } = front_matter;
     let postdata = PostData {
@@ -45,7 +45,7 @@ fn read_post_path(path: &Path) -> Result<PostData, Box<dyn std::error::Error>> {
 }
 
 /// PostData からファイルシステム操作のためのデータを構築する
-fn build_write_data(filebackend: &FileBackend, postdata: &PostData) -> (PathBuf, String) {
+fn build_write_data(filedatastore: &FileDataStore, postdata: &PostData) -> (PathBuf, String) {
     // make data
     let PostData {
         title,
@@ -56,26 +56,26 @@ fn build_write_data(filebackend: &FileBackend, postdata: &PostData) -> (PathBuf,
         title: title.clone(),
     };
     let markdown = serde_frontmatter::serialize(front_matter, content.trim()).unwrap();
-    let path = filebackend.slug_to_path(slug);
+    let path = filedatastore.slug_to_path(slug);
     (path, markdown)
 }
 
-impl FileBackend {
+impl FileDataStore {
     /// Constructor
-    pub fn new(posts_dir: &str) -> FileBackend {
+    pub fn new(posts_dir: &str) -> FileDataStore {
         let posts_dir_path = Path::new(posts_dir).to_path_buf();
-        FileBackend { posts_dir_path }
+        FileDataStore { posts_dir_path }
     }
     /// slug から path を作成する。
     fn slug_to_path(&self, slug: &str) -> PathBuf {
-        let FileBackend { posts_dir_path } = self;
+        let FileDataStore { posts_dir_path } = self;
         let path = posts_dir_path.join(slug).with_extension("md");
         log::trace!("{:?}", path);
         path
     }
 }
 
-impl Backend for FileBackend {
+impl DataStore for FileDataStore {
     /// Create
     fn create_post(&self, postdata: &PostData) -> Result<PostData, Box<dyn std::error::Error>> {
         let (path, markdown) = build_write_data(self, postdata);
@@ -94,7 +94,7 @@ impl Backend for FileBackend {
     /// List
     fn list_posts(&self) -> Result<Vec<Slug>, Box<dyn std::error::Error>> {
         let mut slug_vec: Vec<Slug> = Vec::new();
-        let FileBackend { posts_dir_path } = self;
+        let FileDataStore { posts_dir_path } = self;
         let paths = std::fs::read_dir(posts_dir_path)?;
         for direntry_result in paths {
             let path = direntry_result?.path();
@@ -130,15 +130,15 @@ mod tests {
     #[test]
     fn create_post_delete_post_success() {
         let _ = pretty_env_logger::try_init();
-        let filebackend = FileBackend::new("./example/posts");
+        let filedatastore = FileDataStore::new("./example/posts");
         let slug = "sample3";
 
         // prepare
-        let path = filebackend.slug_to_path(slug);
+        let path = filedatastore.slug_to_path(slug);
         let _ = std::fs::remove_file(path);
 
         // check before create
-        let readdata_before = filebackend.read_post(&slug);
+        let readdata_before = filedatastore.read_post(&slug);
         assert!(readdata_before.is_err());
 
         // create
@@ -148,33 +148,33 @@ mod tests {
             content: String::from("a test body"),
         };
         log::trace!("createdata: {:?}", createdata);
-        let retdata = filebackend.create_post(&createdata).unwrap();
+        let retdata = filedatastore.create_post(&createdata).unwrap();
         log::trace!("retdata: {:?}", retdata);
         assert!(retdata.eq(&createdata));
 
         // check after create
-        let readdata = filebackend.read_post(slug).unwrap();
+        let readdata = filedatastore.read_post(slug).unwrap();
         log::trace!("readdata: {:?}", readdata);
         assert!(readdata.eq(&createdata));
 
         // delete
-        let delresult = filebackend.delete_post(&createdata.slug);
+        let delresult = filedatastore.delete_post(&createdata.slug);
         assert!(delresult.is_ok());
     }
     #[test]
     fn read_post_success() {
         let _ = pretty_env_logger::try_init();
-        let filebackend = FileBackend::new("./example/posts");
+        let filedatastore = FileDataStore::new("./example/posts");
         let slug = "sample1";
-        let post = filebackend.read_post(slug).unwrap();
+        let post = filedatastore.read_post(slug).unwrap();
         assert!(post.slug.eq("sample1"));
         assert!(post.title.eq("sample 1"));
     }
     #[test]
     fn list_posts_success() {
         let _ = pretty_env_logger::try_init();
-        let filebackend = FileBackend::new("./example/posts");
-        let slug_vec = filebackend.list_posts().unwrap();
+        let filedatastore = FileDataStore::new("./example/posts");
+        let slug_vec = filedatastore.list_posts().unwrap();
         eprintln!("{:?}", slug_vec);
         assert!(slug_vec[0].eq("sample1"));
         assert!(slug_vec[1].eq("sample2"));
@@ -183,18 +183,18 @@ mod tests {
     fn list_posts_not_exists() {
         let _ = pretty_env_logger::try_init();
         let posts_dir = "./this file does not exists";
-        let filebackend = FileBackend::new(posts_dir);
-        let metadata = filebackend.list_posts();
+        let filedatastore = FileDataStore::new(posts_dir);
+        let metadata = filedatastore.list_posts();
         assert!(metadata.is_err());
     }
     #[test]
     fn update_post_success() {
         let _ = pretty_env_logger::try_init();
-        let filebackend = FileBackend::new("./example/posts");
+        let filedatastore = FileDataStore::new("./example/posts");
         let slug = "sample2";
 
         // check before update
-        let readdata_before = filebackend.read_post(&slug);
+        let readdata_before = filedatastore.read_post(&slug);
         assert!(readdata_before.is_ok());
         let original_postdata = readdata_before.unwrap();
         let PostData {
@@ -211,17 +211,17 @@ mod tests {
             content: String::from("hoge"),
         };
         log::trace!("createdata: {:?}", updatedata);
-        let retdata = filebackend.update_post(&updatedata).unwrap();
+        let retdata = filedatastore.update_post(&updatedata).unwrap();
         log::trace!("retdata: {:?}", retdata);
         assert!(retdata.eq(&updatedata));
 
         // check after create
-        let readdata = filebackend.read_post(&slug).unwrap();
+        let readdata = filedatastore.read_post(&slug).unwrap();
         log::trace!("readdata: {:?}", readdata);
         assert!(readdata.eq(&updatedata));
 
         // finalize
-        let finiret = filebackend.update_post(&original_postdata).unwrap();
+        let finiret = filedatastore.update_post(&original_postdata).unwrap();
         assert!(finiret.eq(&original_postdata));
     }
 }

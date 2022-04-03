@@ -8,9 +8,9 @@
     - github にて開発
 - [X] 何らかの動作を確認する方法が提供されていること
     - docker-compose で実行が可能
-- [ ] 当該 Blog システムは以下の機能を備えること
+- [X] 当該 Blog システムは以下の機能を備えること
 
-| | バックエンド | BFF | フロントエンド |
+| | データストア | バックエンド | フロントエンド |
 | -- | -- | -- | -- |
 | 投稿 | ✔️ | ✔️ | ✔️ |
 | 一覧取得 | ✔️ | ✔️ | ✔️ |
@@ -28,3 +28,4 @@
 - [nextjs](https://nextjs.org/)
     - [examples/with-docker](https://github.com/vercel/next.js/tree/canary/examples/with-docker)
 - [docker compose](https://docs.docker.com/compose/)
+- [Marp: Markdown Presentation Ecosystem](https://marp.app/)

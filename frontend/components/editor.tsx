@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/router'
+import { useSWRConfig } from 'swr'
 
-import { Post, blogCreate, blogDelete } from 'hooks/useBlog'
+import { Post, useBlogCreate, useBlogDelete } from 'hooks/useBlog'
 
 export function Editor({ slug = '', title = '', content = '' }: Partial<Post>) {
   const router = useRouter()
+  const { mutate } = useSWRConfig()
   const [input, setInput] = useState<Post>({
     slug,
     title,
@@ -23,7 +25,7 @@ export function Editor({ slug = '', title = '', content = '' }: Partial<Post>) {
     <>
       <button
         onClick={async (_) =>
-          blogCreate(input).then(() => {
+          useBlogCreate(input, mutate).then(() => {
             window.alert('posted')
             router.push(`/posts`)
           })
@@ -34,7 +36,7 @@ export function Editor({ slug = '', title = '', content = '' }: Partial<Post>) {
       </button>
       <button
         onClick={async (_) =>
-          blogDelete(slug).then(() => {
+          useBlogDelete(slug, mutate).then(() => {
             window.alert('deleted')
             router.push(`/posts`)
           })
