@@ -150,8 +150,6 @@ impl QueryRoot {
             .map(|field| field.name())
             .collect::<HashSet<_>>();
 
-        log::info!("{:?}", fields);
-
         fields.remove("slug");
         if 0 < fields.capacity() {
             log::trace!("list: fetch contents");
