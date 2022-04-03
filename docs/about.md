@@ -110,4 +110,92 @@ frontend_1  | Listening on port 3000
 ![](img/screen-update.png)
 
 ---
-# 各コンポーネントの詳細
+# 各コンポーネントの詳細: バックエンド
+
+- HTTP サーバ(`src/main.rs`)
+    - `axum`
+- GraphQL(`src/graphql/model.rs`)
+    - `async-graphql`
+- DataStore(`src/datastore/`)
+    - `serde-frontmatter`
+
+---
+# 各コンポーネントの詳細: バックエンド
+
+- HTTP サーバと GraphQL は[async-graphql 公式 example の axum/upload](https://github.com/async-graphql/examples/tree/6a63808523f7e4995f9111a3497f06921cd3b11b/axum/upload)をベースに使用
+- CORS を permissive に変更し、 graphql スキーマを本システム向けに差し替える形で構築した
+- 今回複雑な参照関係や強い制約のあるフィールドは slug のみ
+    - slug のみ async-graphql の機能を利用してバリデーションを実装
+    - 他は String にパースできない時点でエラーを検出できると期待
+
+---
+# 各コンポーネントの詳細: バックエンド
+- データストアは frontmatter(yaml) 付き markdown ファイルを規定のディレクトリで操作
+- frontmatter 部にタイトル等メタデータを記載する想定
+- serde ベースのライブラリ(`serde_frontmatter`)を使用して記述をシンプルにした
+
+```
+---
+title: title
+
+---
+# markdown is available
+a body
+```
+
+---
+# 各コンポーネントの詳細: フロントエンド
+
+- Next.js により Web UI を実装
+- デザインは tailwindcss
+- swr/graphql-request でサーバとやりとり
+- SSR/SSG はやっていない
+
+---
+# 今後の課題
+
+1. より網羅的なテストの実装
+2. 文字列スライスの活用
+3. SSR/SSG の実装
+4. 各種機能
+    - バックエンドを設定ファイルで設定可能に
+    - 認証機能
+    - 一覧ページのページング機能
+
+---
+# 今後の課題: より網羅的なテストの実装
+
+- バックエンドの DataStore の実装ではテストを実行しながら開発を進めた
+    - `backend/src/datastore/file.rs`
+- 他は手動テストで済ませてしまっている
+    - graphql 周りのテストの良い手法がちょっとわからない
+
+---
+# 今後の課題: 文字列スライスの活用
+
+- バックエンドの DataStore が String をふんだんに使っておりメモリ効率が悪い
+- 文字列スライスを活用したい
+- どうも `serde_yaml` のライフタイムの指定がおかしいっぽい。
+    - `serde_yaml` は `serde_frontmatter` でつかわれている。
+
+---
+# 今後の課題: 文字列スライスの活用
+
+- [Function serde_yaml::from_str](https://docs.rs/serde_yaml/0.8.23/serde_yaml/fn.from_str.html#)
+こうなっているが、
+```
+pub fn from_str<T>(s: &str) -> Result<T> 
+where
+    T: DeserializeOwned,
+```
+こうでないと、動的なスライスを扱えないのでは?
+```
+pub fn from_str<'de, T>(s: &'de str) -> Result<T> 
+where
+    T: Deserialize<'de>,
+```
+
+`serde_yaml` はまあまあ大きく、しばらく解決は難しそうなので放置。
+
+---
+# ありがとうございました
