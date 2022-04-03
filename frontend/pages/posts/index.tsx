@@ -1,25 +1,33 @@
 import Link from 'next/link'
 
-import { useBlogPostList } from 'hooks/useBlog'
+import { useRouter } from 'next/router'
+import { handleBlogError, useBlogPostList } from 'hooks/useBlog'
 
 import Layout from 'components/layout'
+import LoadingPage from 'components/loading-page'
 
 export function List() {
+  const router = useRouter()
   const { data, error } = useBlogPostList()
 
-  if (error) {
-    return <div>failed to load</div>
-  }
+  handleBlogError(router, error)
   if (!data) {
-    return <div>loading...</div>
+    return <LoadingPage />
   }
+
+  const posts = data.list
   return (
     <Layout title="List">
-      {data.list.map((post) => (
-        <li key={post.slug}>
-          <Link href={`/posts/${post.slug}`}>{post.title}</Link>
-        </li>
-      ))}
+      <ul>
+        {posts.map((post) => {
+          const { slug, title } = post
+          return (
+            <li key={slug}>
+              <Link href={`/posts/${slug}`}>{title}</Link>
+            </li>
+          )
+        })}
+      </ul>
     </Layout>
   )
 }
