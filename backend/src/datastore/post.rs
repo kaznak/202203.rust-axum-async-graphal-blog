@@ -8,8 +8,8 @@ pub struct PostData {
     pub content: String,
 }
 
-/// Backend の　trait
-pub trait Backend {
+/// DataStore の　trait
+pub trait DataStore {
     /// Create
     fn create_post(&self, postdata: &PostData) -> Result<PostData, Box<dyn std::error::Error>>;
     /// Read
