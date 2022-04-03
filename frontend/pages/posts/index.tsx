@@ -1,14 +1,14 @@
 import Link from 'next/link'
 
 import { useRouter } from 'next/router'
-import { handleBlogError, useBlogPostList } from 'hooks/useBlog'
+import { handleBlogError, useBlogList } from 'hooks/useBlog'
 
 import Layout from 'components/layout'
 import LoadingPage from 'components/loading-page'
 
 export function List() {
   const router = useRouter()
-  const { data, error } = useBlogPostList()
+  const { data, error } = useBlogList()
 
   handleBlogError(router, error)
   if (!data) {
