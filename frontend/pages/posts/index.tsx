@@ -1,27 +1,50 @@
+import { GetStaticPropsContext } from 'next'
 import Link from 'next/link'
 
-import { useBlogPostList } from 'hooks/useBlog'
+import { useRouter } from 'next/router'
+import {
+  handleBlogError,
+  BlogPostList,
+  blogPostList,
+  useBlogPostList,
+} from 'hooks/useBlog'
 
 import Layout from 'components/layout'
+import LoadingPage from 'components/loading-page'
 
-export function List() {
-  const { data, error } = useBlogPostList()
-
-  if (error) {
-    return <div>failed to load</div>
-  }
-  if (!data) {
-    return <div>loading...</div>
-  }
+function ListPage({ posts }: { posts: BlogPostList['list'] }) {
   return (
     <Layout title="List">
-      {data.list.map((post) => (
-        <li key={post.slug}>
-          <Link href={`/posts/${post.slug}`}>{post.title}</Link>
-        </li>
-      ))}
+      <ul>
+        {posts.map((post) => {
+          const { slug, title } = post
+          return (
+            <li key={slug}>
+              <Link href={`/posts/${slug}`}>{title}</Link>
+            </li>
+          )
+        })}
+      </ul>
     </Layout>
   )
+}
+
+export function List({ posts }) {
+  const router = useRouter()
+  const { data, error } = useBlogPostList()
+
+  handleBlogError(router, error)
+  if (!data) {
+    return <LoadingPage />
+  }
+  return <ListPage posts={posts} />
+}
+
+export async function getStaticProps(_cxt: GetStaticPropsContext) {
+  const posts = blogPostList()
+  return {
+    props: { posts },
+  }
 }
 
 export default List

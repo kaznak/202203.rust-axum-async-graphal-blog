@@ -1,5 +1,6 @@
 import { request, gql } from 'graphql-request'
 import useSWR from 'swr'
+import { NextRouter } from 'next/router'
 
 import { API_ENDPOINT } from 'configs/app'
 
@@ -9,22 +10,40 @@ export type Post = {
   content: string
 }
 
+export function handleBlogError(router: NextRouter, error) {
+  if (error) {
+    if (
+      error.response.errors.some(({ message }) => 'Post Not Found' == message)
+    ) {
+      router.push('/404')
+    } else {
+      router.push('/500')
+    }
+  }
+}
+
 /// List
 export type BlogPostList = {
   list: Array<Pick<Post, 'slug' | 'title'>>
 }
 
-export function useBlogPostList() {
-  const query = gql`
-    query List {
-      list {
-        slug
-        title
-      }
+const blogPostListQuery = gql`
+  query List {
+    list {
+      slug
+      title
     }
-  `
+  }
+`
 
-  return useSWR<BlogPostList>(query, (query) => request(API_ENDPOINT, query))
+export async function blogPostList() {
+  return request<BlogPostList>(API_ENDPOINT, blogPostListQuery)
+}
+
+export function useBlogPostList() {
+  return useSWR<BlogPostList>(blogPostListQuery, (query) =>
+    request(API_ENDPOINT, query)
+  )
 }
 
 /// Post

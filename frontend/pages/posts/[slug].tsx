@@ -1,25 +1,18 @@
 import { useRouter } from 'next/router'
-import { useBlogPost } from 'hooks/useBlog'
+import { handleBlogError, useBlogPost } from 'hooks/useBlog'
 import ReactMarkdown from 'react-markdown'
 
 import Layout from 'components/layout'
+import LoadingPage from 'components/loading-page'
 
 export function Post() {
   const router = useRouter()
   const { slug } = router.query
   const { data, error } = useBlogPost(slug as string)
 
-  if (error) {
-    if (
-      error.response.errors.some(({ message }) => 'Post Not Found' == message)
-    ) {
-      router.push('/404')
-    } else {
-      return <div>failed to load</div>
-    }
-  }
+  handleBlogError(router, error)
   if (!data) {
-    return <div>loading...</div>
+    return <LoadingPage />
   }
   return (
     <Layout title={data.post.title} editSlug={slug as string}>
