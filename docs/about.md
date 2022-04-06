@@ -10,7 +10,7 @@ Rust/axum/async-graphql を使用したブログシステム
 # 目次
 
 1. 要件と挙動の確認
-2. システムの構成
+    - システムの構成
 3. 各コンポーネントの詳細
 4. 今後の課題
 
@@ -44,15 +44,26 @@ futures = "0.3.0"
 ```
 
 ---
-# 要件と挙動の確認: [構成]
+# 要件と挙動の確認: システムの構成
 
 - バックエンド
     - Rust/axum/async-graphql
+    - サーバのバイナリを生成 → コンテナで実行
+- フロントエンド
+    - next.js/tailwindcss/react-markdown/swr/graphql-request
+    - next.js のサーバでリソースを提供
+
+それぞれコンテナで実行、 docker-compose でインテグレーション
+
+---
+# 要件と挙動の確認: システムの構成
+
+- バックエンド
     - 投稿データは Markdown でファイルシステムに格納
         - メタデータは frontmatter に格納
 - フロントエンド
-    - next.js/tailwindcss/react-markdown
-    - swr/graphql-request
+    - バックエンドへは CORS で接続
+    - SSR/SSG はなし
 
 詳細な構成は各コンポーネントの詳細にて確認
 
@@ -163,7 +174,7 @@ a body
 3. SSR/SSG の実装
 4. 各種機能
     - 実はフロントエンドでは create しか使ってないので修正
-        - create でも既存ポストの上書きができるので
+        - create で既存ポストの上書きをしてしまっている
     - バックエンドを設定ファイルで設定可能に
     - 認証機能
     - 一覧ページのページング機能
@@ -174,20 +185,20 @@ a body
 - バックエンドの DataStore の実装ではテストを実行しながら開発を進めた
     - `backend/src/datastore/file.rs`
 - 他は手動テストで済ませてしまっている
-    - graphql 周りのテストの良い手法がちょっとわからない
+    - graphql 周りのテストの良い手法を模索中
 
 ---
 # 今後の課題: 文字列スライスの活用
 
 - バックエンドの DataStore が String をふんだんに使っておりメモリ効率が悪い
 - 文字列スライスを活用したい
-- どうも `serde_yaml` のライフタイムの指定がおかしいっぽい。
+- どうも `serde_yaml` のライフタイムの指定が間違っているのでは?
     - `serde_yaml` は `serde_frontmatter` でつかわれている。
 
 ---
 # 今後の課題: 文字列スライスの活用
 
-- [Function serde_yaml::from_str](https://docs.rs/serde_yaml/0.8.23/serde_yaml/fn.from_str.html#)
+[Function serde_yaml::from_str](https://docs.rs/serde_yaml/0.8.23/serde_yaml/fn.from_str.html#)
 こうなっているが、これはIO等返り値と引数が無関係な場合では?
 ```
 pub fn from_str<T>(s: &str) -> Result<T> 
