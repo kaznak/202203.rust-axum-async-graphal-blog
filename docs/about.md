@@ -84,6 +84,7 @@ frontend_1  | Listening on port 3000
 ---
 # 要件と挙動の確認: [機能] 投稿
 
+ヘッダ部の `create` をクリック
 [http://localhost:3000/posts-editor]()
 
 ![](img/screen-create.png)
@@ -91,6 +92,7 @@ frontend_1  | Listening on port 3000
 ---
 # 要件と挙動の確認: [機能] 詳細取得
 
+一覧の記事タイトルをクリック
 [http://localhost:3000/posts/slkajgoaijdgova]()
 
 ![](img/screen-post.png)
@@ -98,6 +100,7 @@ frontend_1  | Listening on port 3000
 ---
 # 要件と挙動の確認: [機能] 更新
 
+詳細ページのヘッダの `edit` をクリック
 [http://localhost:3000/posts-editor/slkajgoaijdgova]()
 
 ![](img/screen-update.png)
@@ -105,6 +108,7 @@ frontend_1  | Listening on port 3000
 ---
 # 要件と挙動の確認: [機能] 削除
 
+編集ページで `Delete` ボタンをクリック
 [http://localhost:3000/posts-editor/slkajgoaijdgova]()
 
 ![](img/screen-update.png)
