@@ -188,13 +188,13 @@ a body
 # 今後の課題: 文字列スライスの活用
 
 - [Function serde_yaml::from_str](https://docs.rs/serde_yaml/0.8.23/serde_yaml/fn.from_str.html#)
-こうなっているが、
+こうなっているが、これはIO等返り値と引数が無関係な場合では?
 ```
 pub fn from_str<T>(s: &str) -> Result<T> 
 where
     T: DeserializeOwned,
 ```
-こうでないと、動的なスライスを扱えないのでは?
+こうでないと、他の構造体由来のスライスを扱えないのでは?
 ```
 pub fn from_str<'de, T>(s: &'de str) -> Result<T> 
 where
